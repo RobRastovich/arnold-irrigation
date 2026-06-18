@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma, setCurrentUserId, clearCurrentUserId } from '@/lib/db'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 import { authenticateRequest } from '@/lib/api-auth'
 
 // GET all audit logs
@@ -44,8 +46,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden. Admin only.' }, { status: 403 })
   }
 
-  setCurrentUserId(user.userId)
-
   try {
     const { searchParams } = new URL(request.url)
     const beforeDate = searchParams.get('beforeDate')
@@ -77,7 +77,5 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error('Error purging audit logs:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  } finally {
-    clearCurrentUserId()
   }
 }

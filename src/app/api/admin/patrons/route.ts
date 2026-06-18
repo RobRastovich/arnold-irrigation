@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma, setCurrentUserId, clearCurrentUserId } from '@/lib/db'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 import { authenticateRequest } from '@/lib/api-auth'
 
 // GET all patrons
@@ -40,7 +42,6 @@ export async function POST(request: NextRequest) {
   }
 
   const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email
-  setCurrentUserId(user.userId, userName)
 
   try {
     const body = await request.json()
@@ -102,7 +103,5 @@ export async function POST(request: NextRequest) {
     console.error('Error creating patron:', error)
     console.error('Error details:', JSON.stringify(error, null, 2))
     return NextResponse.json({ error: 'Internal server error', details: String(error) }, { status: 500 })
-  } finally {
-    clearCurrentUserId()
   }
 }

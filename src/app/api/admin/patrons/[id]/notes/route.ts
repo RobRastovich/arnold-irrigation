@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma, setCurrentUserId, clearCurrentUserId } from '@/lib/db'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 import { authenticateRequest } from '@/lib/api-auth'
 
 // GET all notes for a patron
@@ -35,8 +37,6 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  setCurrentUserId(user.userId, `${user.firstName} ${user.lastName}`)
-
   try {
     const body = await request.json()
     const { note } = body
@@ -53,7 +53,5 @@ export async function POST(
   } catch (error) {
     console.error('Error creating note:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  } finally {
-    clearCurrentUserId()
   }
 }

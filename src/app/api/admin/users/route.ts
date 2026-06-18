@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma, setCurrentUserId, clearCurrentUserId } from '@/lib/db'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 import { authenticateRequest } from '@/lib/api-auth'
 import { hashPassword } from '@/lib/auth'
 
@@ -73,8 +75,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden. Admin only.' }, { status: 403 })
   }
 
-  setCurrentUserId(user.userId, `${user.firstName} ${user.lastName}`)
-
   try {
     const body = await request.json()
     const {
@@ -142,7 +142,5 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating user:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  } finally {
-    clearCurrentUserId()
   }
 }

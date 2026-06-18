@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma, setCurrentUserId, clearCurrentUserId } from '@/lib/db'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 import { authenticateRequest } from '@/lib/api-auth'
 
 // GET single patron
@@ -48,7 +50,6 @@ export async function PUT(
   }
 
   const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email
-  setCurrentUserId(user.userId, userName)
 
   try {
     const body = await request.json()
@@ -61,8 +62,6 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating patron:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  } finally {
-    clearCurrentUserId()
   }
 }
 
@@ -76,8 +75,6 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  setCurrentUserId(user.userId, `${user.firstName} ${user.lastName}`)
-
   try {
     await prisma.patron.delete({
       where: { id: params.id },
@@ -87,7 +84,5 @@ export async function DELETE(
   } catch (error) {
     console.error('Error deleting patron:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  } finally {
-    clearCurrentUserId()
   }
 }
