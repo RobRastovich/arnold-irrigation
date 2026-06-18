@@ -50,6 +50,9 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       email: user.email,
       role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      timezone: user.timezone,
     })
 
     // Return user data (excluding password) and token

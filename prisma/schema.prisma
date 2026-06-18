@@ -14,6 +14,18 @@ enum UserRole {
   PATRON
 }
 
+enum TicketStatus {
+  NEW
+  IN_PROGRESS
+  WAITING_APPROVAL
+  CLOSED
+}
+
+enum TicketType {
+  FEATURE_REQUEST
+  BUG_FIX
+}
+
 model User {
   id                String   @id @default(cuid())
   email             String   @unique
@@ -30,8 +42,122 @@ model User {
   emailVerified     Boolean  @default(false)
   passwordResetToken String?
   passwordResetExpiry DateTime?
+  timezone          String   @default("America/Los_Angeles")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   @@map("users")
+}
+
+model Patron {
+  id                    String   @id @default(cuid())
+  accountNumber         String   @unique
+  firstName             String
+  lastName              String
+  legalName             String?
+  serviceStreet         String
+  serviceCity           String
+  serviceState          String
+  serviceZip            String
+  serviceCountry        String   @default("US")
+  mailingStreet         String?
+  mailingCity           String?
+  mailingState          String?
+  mailingZip            String?
+  mailingCountry        String?
+  primaryEmail          String
+  primaryPhone          String
+  totalWaterRightAcres  Float
+  assessedAcres         Float
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  notes                 AccountNote[]
+  additionalContacts    AdditionalContact[]
+  documents             PatronDocument[]
+
+  @@map("patrons")
+}
+
+model AccountNote {
+  id          String   @id @default(cuid())
+  patronId    String
+  note        String
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  patron      Patron   @relation(fields: [patronId], references: [id], onDelete: Cascade)
+
+  @@map("account_notes")
+}
+
+model AdditionalContact {
+  id          String   @id @default(cuid())
+  patronId    String
+  name        String
+  email       String?
+  phone       String?
+  street      String?
+  city        String?
+  state       String?
+  zip         String?
+  country     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  patron      Patron   @relation(fields: [patronId], references: [id], onDelete: Cascade)
+
+  @@map("additional_contacts")
+}
+
+model PatronDocument {
+  id          String   @id @default(cuid())
+  patronId    String
+  fileName    String
+  s3Key       String
+  mimeType    String
+  fileSize    Int
+  uploadedBy  String
+  createdAt   DateTime @default(now())
+
+  patron      Patron   @relation(fields: [patronId], references: [id], onDelete: Cascade)
+
+  @@map("patron_documents")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  tableName   String
+  recordId    String
+  action      String   // CREATE, UPDATE, DELETE
+  changedBy   String   // User ID who made the change
+  changes     Json     // JSON object of changed fields
+  createdAt   DateTime @default(now())
+
+  @@map("audit_logs")
+  @@index([tableName, recordId])
+  @@index([changedBy])
+  @@index([createdAt])
+}
+
+model Ticket {
+  id          String       @id @default(cuid())
+  ticketNumber Int          @unique
+  title       String
+  description String
+  type        TicketType
+  status      TicketStatus @default(NEW)
+  priority    String       @default("MEDIUM") // LOW, MEDIUM, HIGH
+  assignedTo  String?      // User ID
+  createdBy   String       // User ID who created the ticket
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("tickets")
+  @@index([status])
+  @@index([assignedTo])
+  @@index([createdBy])
+  @@index([ticketNumber])
 }
