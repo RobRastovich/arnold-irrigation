@@ -9,11 +9,17 @@ export default function PatronDetailPage() {
   const router = useRouter()
   const params = useParams()
   const [patron, setPatron] = useState<any>(null)
+  const [turnouts, setTurnouts] = useState<any[]>([])
+  const [notes, setNotes] = useState<any[]>([])
+  const [newNote, setNewNote] = useState('')
+  const [addingNote, setAddingNote] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     fetchPatron()
+    fetchTurnouts()
+    fetchNotes()
   }, [params.id])
 
   const fetchPatron = async () => {
@@ -35,6 +41,72 @@ export default function PatronDetailPage() {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchTurnouts = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/admin/turnouts?accountNumber=${patron?.accountNumber}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setTurnouts(data)
+      }
+    } catch (err) {
+      console.error('Error fetching turnouts:', err)
+    }
+  }
+
+  const fetchNotes = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/admin/patrons/${params.id}/notes`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setNotes(data)
+      }
+    } catch (err) {
+      console.error('Error fetching notes:', err)
+    }
+  }
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newNote.trim()) return
+
+    setAddingNote(true)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/admin/patrons/${params.id}/notes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ notes: newNote }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to add note')
+      }
+
+      setNewNote('')
+      fetchNotes()
+    } catch (err) {
+      setError('Error adding note')
+      console.error(err)
+    } finally {
+      setAddingNote(false)
     }
   }
 
@@ -173,22 +245,47 @@ export default function PatronDetailPage() {
               </div>
             </div>
 
-            {/* Account Notes */}
+            {/* Notes */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Account Notes</h3>
-              {patron.notes && patron.notes.length > 0 ? (
-                <div className="space-y-3">
-                  {patron.notes.map((note: any) => (
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Notes</h3>
+
+              <form onSubmit={handleAddNote} className="mb-6">
+                <textarea
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Add a new note..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 mb-2"
+                />
+                <button
+                  type="submit"
+                  disabled={addingNote || !newNote.trim()}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
+                >
+                  {addingNote ? 'Adding...' : 'Add Note'}
+                </button>
+              </form>
+
+              {notes.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No notes yet</p>
+              ) : (
+                <div className="space-y-4">
+                  {notes.map((note) => (
                     <div key={note.id} className="border border-gray-200 rounded-lg p-4">
-                      <p className="text-sm text-gray-600 mb-2">{note.note}</p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(note.createdAt).toLocaleString()}
-                      </p>
+                      <div className="flex justify-between items-start mb-2">
+                        <p className="text-sm text-gray-500">
+                          {new Date(note.timeReceived).toLocaleString()}
+                        </p>
+                        {note.creator && (
+                          <p className="text-sm text-gray-600">
+                            by {note.creator.firstName} {note.creator.lastName}
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-gray-900">{note.notes}</p>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="text-gray-500">No notes</p>
               )}
             </div>
 
@@ -229,6 +326,72 @@ export default function PatronDetailPage() {
                 </div>
               ) : (
                 <p className="text-gray-500">No documents</p>
+              )}
+            </div>
+
+            {/* Turnouts */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Turnouts</h3>
+                <Link
+                  href="/admin/turnouts/new"
+                  className="text-primary-600 hover:text-primary-900 text-sm"
+                >
+                  Add Turnout
+                </Link>
+              </div>
+              {turnouts.length > 0 ? (
+                <>
+                  <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500">Total Delivered Acres</p>
+                        <p className="font-medium text-gray-900">
+                          {turnouts.reduce((sum, t) => sum + t.deliveredAcres, 0).toFixed(2)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Total Acres Owned</p>
+                        <p className="font-medium text-gray-900">
+                          {turnouts.reduce((sum, t) => sum + t.acresOwned, 0).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {turnouts.map((turnout) => (
+                      <div key={turnout.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-medium">{turnout.canal} - {turnout.gate}</p>
+                            <p className="text-sm text-gray-600">Tax Lot: {turnout.taxLotNumber || 'N/A'}</p>
+                          </div>
+                          <Link
+                            href={`/admin/turnouts/${turnout.id}`}
+                            className="text-primary-600 hover:text-primary-900 text-sm"
+                          >
+                            View
+                          </Link>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-500">Delivered Acres</p>
+                            <p className="font-medium">{turnout.deliveredAcres.toFixed(2)}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">Acres Owned</p>
+                            <p className="font-medium">{turnout.acresOwned.toFixed(2)}</p>
+                          </div>
+                        </div>
+                        {turnout.legalDescription && (
+                          <p className="text-sm text-gray-600 mt-2">{turnout.legalDescription}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-gray-500">No turnouts</p>
               )}
             </div>
           </div>

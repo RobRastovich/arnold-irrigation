@@ -4,19 +4,19 @@ import { authenticateRequest } from '@/lib/api-auth'
 
 const prisma = new PrismaClient()
 
-// GET all notes for a patron
+// GET all notes for a turnout
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await authenticateRequest(request)
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   try {
+    const user = await authenticateRequest(request)
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const notes = await prisma.note.findMany({
-      where: { patronId: params.id },
+      where: { turnoutId: params.id },
       orderBy: { timeReceived: 'desc' },
     })
 
@@ -36,32 +36,32 @@ export async function GET(
 
     return NextResponse.json(notesWithCreators)
   } catch (error) {
-    console.error('Error fetching notes:', error)
+    console.error('Error fetching turnout notes:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-// POST create new note
+// POST create new note for a turnout
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await authenticateRequest(request)
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   try {
+    const user = await authenticateRequest(request)
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { notes, timeReceived } = body
 
-    // Verify patron exists
-    const patron = await prisma.patron.findUnique({
+    // Verify turnout exists
+    const turnout = await prisma.turnout.findUnique({
       where: { id: params.id },
     })
 
-    if (!patron) {
-      return NextResponse.json({ error: 'Patron not found' }, { status: 404 })
+    if (!turnout) {
+      return NextResponse.json({ error: 'Turnout not found' }, { status: 404 })
     }
 
     // Verify user exists before setting createdBy
@@ -76,7 +76,7 @@ export async function POST(
 
     const newNote = await prisma.note.create({
       data: {
-        patronId: params.id,
+        turnoutId: params.id,
         notes,
         createdBy,
         timeReceived: timeReceived ? new Date(timeReceived) : new Date(),
@@ -85,7 +85,7 @@ export async function POST(
 
     return NextResponse.json(newNote, { status: 201 })
   } catch (error: any) {
-    console.error('Error creating note:', error)
+    console.error('Error creating turnout note:', error)
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
 }

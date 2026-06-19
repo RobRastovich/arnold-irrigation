@@ -58,10 +58,23 @@ function createPrismaClient() {
       if (oldRecord && result) {
         const fieldChanges: any = {}
         for (const key in result) {
-          if (key !== 'updatedAt' && key !== 'id' && key !== 'createdAt' && oldRecord[key] !== result[key]) {
-            fieldChanges[key] = {
-              old: oldRecord[key],
-              new: result[key],
+          // Skip system fields and nested objects/arrays
+          if (key !== 'updatedAt' && key !== 'id' && key !== 'createdAt') {
+            const oldValue = oldRecord[key]
+            const newValue = result[key]
+
+            // Only log scalar values (skip objects, arrays, null)
+            const isScalar = newValue === null ||
+              typeof newValue === 'string' ||
+              typeof newValue === 'number' ||
+              typeof newValue === 'boolean' ||
+              newValue instanceof Date
+
+            if (isScalar && oldValue !== newValue) {
+              fieldChanges[key] = {
+                old: oldValue,
+                new: newValue,
+              }
             }
           }
         }

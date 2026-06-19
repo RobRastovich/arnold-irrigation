@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma, setCurrentUserId, clearCurrentUserId } from '@/lib/db'
 import { authenticateRequest } from '@/lib/api-auth'
 
 // GET single ticket
@@ -87,13 +85,18 @@ export async function PUT(
     if (priority !== undefined) updateData.priority = priority
     if (assignedTo !== undefined) updateData.assignedTo = assignedTo
 
+    setCurrentUserId(user.userId, userName)
+
     const updatedTicket = await prisma.ticket.update({
       where: { id: params.id },
       data: updateData,
     })
 
+    clearCurrentUserId()
+
     return NextResponse.json(updatedTicket)
   } catch (error) {
+    clearCurrentUserId()
     console.error('Error updating ticket:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -117,12 +120,15 @@ export async function DELETE(
   const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email
 
   try {
+    setCurrentUserId(user.userId, userName)
     await prisma.ticket.delete({
       where: { id: params.id },
     })
+    clearCurrentUserId()
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    clearCurrentUserId()
     console.error('Error deleting ticket:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

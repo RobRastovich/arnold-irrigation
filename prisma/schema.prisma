@@ -76,6 +76,8 @@ model Patron {
   notes                 AccountNote[]
   additionalContacts    AdditionalContact[]
   documents             PatronDocument[]
+  turnouts              Turnout[]
+  generalNotes          Note[]
 
   @@map("patrons")
 }
@@ -125,6 +127,43 @@ model PatronDocument {
   patron      Patron   @relation(fields: [patronId], references: [id], onDelete: Cascade)
 
   @@map("patron_documents")
+}
+
+model Turnout {
+  id                String   @id @default(cuid())
+  accountNumber     String
+  canal             String   @db.VarChar(255)
+  gate              String   @db.VarChar(255)
+  deliveredAcres     Float
+  acresOwned        Float
+  taxLotNumber      String   @db.VarChar(255)
+  legalDescription  String   @db.VarChar(255)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  patron            Patron   @relation(fields: [accountNumber], references: [accountNumber], onDelete: Cascade)
+  notes             Note[]
+
+  @@map("turnouts")
+  @@index([accountNumber])
+}
+
+model Note {
+  id             String   @id @default(cuid())
+  patronId       String?
+  turnoutId      String?
+  createdBy      String?
+  timeReceived   DateTime @default(now())
+  notes          String   @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  patron         Patron?  @relation(fields: [patronId], references: [id], onDelete: Cascade)
+  turnout        Turnout? @relation(fields: [turnoutId], references: [id], onDelete: Cascade)
+
+  @@map("notes")
+  @@index([patronId])
+  @@index([turnoutId])
 }
 
 model AuditLog {

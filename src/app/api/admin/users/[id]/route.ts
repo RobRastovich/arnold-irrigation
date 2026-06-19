@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma, setCurrentUserId, clearCurrentUserId } from '@/lib/db'
 import { authenticateRequest } from '@/lib/api-auth'
 import { hashPassword } from '@/lib/auth'
 
@@ -105,6 +103,8 @@ export async function PUT(
       updateData.passwordHash = await hashPassword(password)
     }
 
+    setCurrentUserId(user.userId, userName)
+
     const updatedUser = await prisma.user.update({
       where: { id: params.id },
       data: updateData,
@@ -127,8 +127,11 @@ export async function PUT(
       },
     })
 
+    clearCurrentUserId()
+
     return NextResponse.json(updatedUser)
   } catch (error) {
+    clearCurrentUserId()
     console.error('Error updating user:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -157,12 +160,15 @@ export async function DELETE(
   const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email
 
   try {
+    setCurrentUserId(user.userId, userName)
     await prisma.user.delete({
       where: { id: params.id },
     })
+    clearCurrentUserId()
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    clearCurrentUserId()
     console.error('Error deleting user:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

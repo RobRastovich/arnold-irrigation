@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma, setCurrentUserId, clearCurrentUserId } from '@/lib/db'
 import { authenticateRequest } from '@/lib/api-auth'
 import { hashPassword } from '@/lib/auth'
 
@@ -103,6 +101,9 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await hashPassword(password)
 
+    const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email
+    setCurrentUserId(user.userId, userName)
+
     const newUser = await prisma.user.create({
       data: {
         email,
@@ -138,8 +139,11 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    clearCurrentUserId()
+
     return NextResponse.json(newUser, { status: 201 })
   } catch (error) {
+    clearCurrentUserId()
     console.error('Error creating user:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma, setCurrentUserId, clearCurrentUserId } from '@/lib/db'
 import { authenticateRequest } from '@/lib/api-auth'
-
-const prisma = new PrismaClient()
 
 // GET all tickets
 export async function GET(request: NextRequest) {
@@ -113,6 +111,9 @@ export async function POST(request: NextRequest) {
 
     const nextTicketNumber = lastTicket ? lastTicket.ticketNumber + 1 : 1001
 
+    const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email
+    setCurrentUserId(user.userId, userName)
+
     const newTicket = await prisma.ticket.create({
       data: {
         ticketNumber: nextTicketNumber,
@@ -126,8 +127,11 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    clearCurrentUserId()
+
     return NextResponse.json(newTicket, { status: 201 })
   } catch (error) {
+    clearCurrentUserId()
     console.error('Error creating ticket:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
