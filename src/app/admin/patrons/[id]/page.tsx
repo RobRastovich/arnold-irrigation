@@ -7,11 +7,13 @@ import AdminSidebar from '@/components/AdminSidebar'
 import WindowShade from '@/components/WindowShade'
 import AddContactModal from '@/components/AddContactModal'
 import AddNoteModal from '@/components/AddNoteModal'
+import AddPatronDocumentModal from '@/components/AddPatronDocumentModal'
 
 export default function PatronDetailPage() {
   const router = useRouter()
   const params = useParams()
   const [patron, setPatron] = useState<any>(null)
+  const [showDocumentModal, setShowDocumentModal] = useState(false)
   const [turnouts, setTurnouts] = useState<any[]>([])
   const [notes, setNotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -370,30 +372,70 @@ export default function PatronDetailPage() {
             <WindowShade
               title={`Documents (${patron.documents?.length || 0})`}
               defaultOpen={false}
+              actionButton={
+                <button
+                  className="sf-btn sf-btn-secondary text-xs"
+                  onClick={() => setShowDocumentModal(true)}
+                >
+                  Upload Document
+                </button>
+              }
             >
               {patron.documents && patron.documents.length > 0 ? (
                 <table className="sf-table">
                   <thead>
                     <tr>
                       <th>File Name</th>
-                      <th>Type</th>
-                      <th>Uploaded</th>
+                      <th>Doc Type</th>
+                      <th>Description</th>
+                      <th>Uploaded By</th>
+                      <th>Date</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
                     {patron.documents.map((doc: any) => (
                       <tr key={doc.id}>
-                        <td className="font-medium">{doc.fileName}</td>
-                        <td className="text-xs">{doc.mimeType}</td>
-                        <td className="text-xs">
+                        <td className="font-medium">
+                          <a
+                            href={doc.s3Url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            {doc.fileName}
+                          </a>
+                        </td>
+                        <td>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            doc.documentType === 'LEGAL' ? 'bg-red-100 text-red-700' :
+                            doc.documentType === 'COMPLIANCE' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-blue-100 text-blue-700'
+                          }`}>
+                            {doc.documentType.charAt(0) + doc.documentType.slice(1).toLowerCase()}
+                          </span>
+                        </td>
+                        <td className="text-sm text-gray-600">{doc.description || '—'}</td>
+                        <td className="text-sm text-gray-600">{doc.uploadedBy}</td>
+                        <td className="text-xs text-gray-500 whitespace-nowrap">
                           {new Date(doc.createdAt).toLocaleString()}
+                        </td>
+                        <td>
+                          <a
+                            href={doc.s3Url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:text-blue-900"
+                          >
+                            View
+                          </a>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               ) : (
-                <p className="sf-field-value text-gray-500">No documents</p>
+                <p className="sf-field-value text-gray-500">No documents uploaded yet</p>
               )}
             </WindowShade>
 
@@ -547,6 +589,12 @@ export default function PatronDetailPage() {
         onClose={() => setShowNoteModal(false)}
         patronId={params.id as string}
         onNoteAdded={handleNoteAdded}
+      />
+      <AddPatronDocumentModal
+        isOpen={showDocumentModal}
+        onClose={() => setShowDocumentModal(false)}
+        patronId={params.id as string}
+        onDocumentAdded={() => { setShowDocumentModal(false); fetchPatron() }}
       />
       {showNoteDetailModal && selectedNote && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
