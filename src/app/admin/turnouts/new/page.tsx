@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import AdminSidebar from '@/components/AdminSidebar'
 
@@ -10,7 +10,7 @@ interface Patron {
   lastName: string
 }
 
-export default function NewTurnoutPage() {
+function NewTurnoutPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [patrons, setPatrons] = useState<Patron[]>([])
@@ -263,5 +263,20 @@ export default function NewTurnoutPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function NewTurnoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-100 flex">
+        <AdminSidebar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </div>
+    }>
+      <NewTurnoutPageContent />
+    </Suspense>
   )
 }
