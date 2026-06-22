@@ -19,7 +19,13 @@ export async function getPresignedUploadUrl(key: string, contentType: string): P
     Key: key,
     ContentType: contentType,
   })
-  return getSignedUrl(s3Client, command, { expiresIn: 300 })
+  // Sign only the host header — browser sets Content-Type itself on the PUT
+  const url = await getSignedUrl(s3Client, command, {
+    expiresIn: 300,
+    signableHeaders: new Set(['host']),
+  })
+  console.log('[presign] uploadUrl:', url)
+  return url
 }
 
 export function getPublicUrl(key: string): string {
