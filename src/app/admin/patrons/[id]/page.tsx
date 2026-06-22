@@ -428,7 +428,14 @@ export default function PatronDetailPage() {
                   <tbody>
                     {transactionItems.map((item) => (
                       <tr key={item.id}>
-                        <td className="font-medium">{item.transaction.transactionNumber}</td>
+                        <td className="font-medium">
+                          <Link
+                            href={`/admin/transactions/${item.transaction.id}`}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            {item.transaction.transactionNumber}
+                          </Link>
+                        </td>
                         <td>
                           <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                             item.transaction.type === 'CANCEL' ? 'bg-red-100 text-red-800' :

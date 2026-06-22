@@ -79,6 +79,7 @@ model Patron {
   turnouts              Turnout[]
   generalNotes          Note[]
   transactionItems      TransactionItem[]
+  weirBookItems         WeirBookItem[]
 
   @@map("patrons")
 }
@@ -208,6 +209,41 @@ model Ticket {
   @@index([assignedTo])
   @@index([createdBy])
   @@index([ticketNumber])
+}
+
+model WeirBook {
+  id            String        @id @default(cuid())
+  weirNumber    String        @unique
+  canal         String        @db.VarChar(255)
+  weirLocation  Int
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  items         WeirBookItem[]
+
+  @@map("weir_books")
+  @@index([weirNumber])
+  @@index([canal])
+}
+
+model WeirBookItem {
+  id              String    @id @default(cuid())
+  weirBookId      String
+  accountNumber   String?
+  acres           Float
+  privateAcres    Float
+  description     String?   @db.Text
+  notes           String?   @db.Text
+  imageUrl        String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  weirBook        WeirBook  @relation(fields: [weirBookId], references: [id], onDelete: Cascade)
+  patron          Patron?   @relation(fields: [accountNumber], references: [accountNumber], onDelete: Cascade)
+
+  @@map("weir_book_items")
+  @@index([weirBookId])
+  @@index([accountNumber])
 }
 
 enum TransactionType {
