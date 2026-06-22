@@ -20,6 +20,7 @@ export default function PatronDetailPage() {
   const [showNoteModal, setShowNoteModal] = useState(false)
   const [selectedNote, setSelectedNote] = useState<any>(null)
   const [showNoteDetailModal, setShowNoteDetailModal] = useState(false)
+  const [transactionItems, setTransactionItems] = useState<any[]>([])
 
   useEffect(() => {
     fetchPatron()
@@ -29,6 +30,7 @@ export default function PatronDetailPage() {
     if (patron) {
       fetchTurnouts()
       fetchNotes()
+      fetchTransactionItems()
     }
   }, [patron])
 
@@ -87,6 +89,21 @@ export default function PatronDetailPage() {
       }
     } catch (err) {
       console.error('Error fetching notes:', err)
+    }
+  }
+
+  const fetchTransactionItems = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/admin/patrons/${params.id}/transactions`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setTransactionItems(data)
+      }
+    } catch (err) {
+      console.error('Error fetching transaction items:', err)
     }
   }
 
@@ -377,6 +394,69 @@ export default function PatronDetailPage() {
                 </table>
               ) : (
                 <p className="sf-field-value text-gray-500">No documents</p>
+              )}
+            </WindowShade>
+
+            {/* Transactions - Window Shade */}
+            <WindowShade
+              title={`Transactions (${transactionItems.length})`}
+              defaultOpen={false}
+              actionButton={
+                <Link
+                  href={`/admin/transactions/new?accountNumber=${patron.accountNumber}`}
+                  className="sf-btn sf-btn-secondary text-xs"
+                >
+                  New Transaction
+                </Link>
+              }
+            >
+              {transactionItems.length === 0 ? (
+                <p className="sf-field-value text-gray-500 text-center py-2">No transactions</p>
+              ) : (
+                <table className="sf-table">
+                  <thead>
+                    <tr>
+                      <th>Transaction #</th>
+                      <th>Type</th>
+                      <th>Date</th>
+                      <th>Parcel #</th>
+                      <th>Water Right Acres</th>
+                      <th>Tax Lot</th>
+                      <th>Legal Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transactionItems.map((item) => (
+                      <tr key={item.id}>
+                        <td className="font-medium">{item.transaction.transactionNumber}</td>
+                        <td>
+                          <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                            item.transaction.type === 'CANCEL' ? 'bg-red-100 text-red-800' :
+                            item.transaction.type === 'TRANSFER' ? 'bg-blue-100 text-blue-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {item.transaction.type}
+                          </span>
+                        </td>
+                        <td className="text-xs">
+                          {item.transactionDate
+                            ? new Date(item.transactionDate).toLocaleDateString()
+                            : new Date(item.createdAt).toLocaleDateString()}
+                        </td>
+                        <td>{item.parcelNumber || '-'}</td>
+                        <td>{item.waterRightAcres != null ? item.waterRightAcres.toFixed(2) : '-'}</td>
+                        <td>{item.taxLot || '-'}</td>
+                        <td>
+                          {item.legalDescription
+                            ? item.legalDescription.length > 60
+                              ? `${item.legalDescription.substring(0, 60)}...`
+                              : item.legalDescription
+                            : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </WindowShade>
 
