@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
+import ListViewModal from '@/components/ListViewModal'
 import { formatDateTimeInTimezone } from '@/lib/date-utils'
 
 export default function AuditLogsPage() {
@@ -13,14 +14,28 @@ export default function AuditLogsPage() {
   const [purging, setPurging] = useState(false)
   const [showPurgeDialog, setShowPurgeDialog] = useState(false)
   const [purgeOptions, setPurgeOptions] = useState({
+    afterDate: '',
     beforeDate: '',
     tableName: '',
   })
   const [filter, setFilter] = useState({
     tableName: '',
     recordId: '',
+    startDate: '',
+    endDate: '',
   })
   const [userTimezone, setUserTimezone] = useState('America/Los_Angeles')
+  const [listViews, setListViews] = useState<any[]>([])
+  const [selectedView, setSelectedView] = useState<any>(null)
+  const [showListViewModal, setShowListViewModal] = useState(false)
+
+  const availableColumns = [
+    { id: 'createdAt', label: 'Date/Time' },
+    { id: 'action', label: 'Action' },
+    { id: 'tableName', label: 'Table' },
+    { id: 'recordId', label: 'Record ID' },
+    { id: 'changedBy', label: 'Changed By' },
+  ]
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -32,6 +47,7 @@ export default function AuditLogsPage() {
 
   useEffect(() => {
     fetchLogs()
+    fetchListViews()
   }, [])
 
   const fetchLogs = async () => {
@@ -40,6 +56,8 @@ export default function AuditLogsPage() {
       const params = new URLSearchParams()
       if (filter.tableName) params.append('tableName', filter.tableName)
       if (filter.recordId) params.append('recordId', filter.recordId)
+      if (filter.startDate) params.append('startDate', filter.startDate)
+      if (filter.endDate) params.append('endDate', filter.endDate)
 
       const response = await fetch(`/api/admin/audit-logs?${params.toString()}`, {
         headers: {
@@ -60,6 +78,129 @@ export default function AuditLogsPage() {
     }
   }
 
+  const fetchListViews = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/admin/list-views?entityType=auditLog', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setListViews(data)
+      }
+    } catch (error) {
+      console.error('Error fetching list views:', error)
+    }
+  }
+
+  const applyFilters = (logs: any[], filters: any[]) => {
+    return logs.filter((log) => {
+      return filters.every((filter) => {
+        const value = log[filter.field]
+        const filterValue = filter.value
+
+        switch (filter.operator) {
+          case 'equals':
+            return String(value).toLowerCase() === filterValue.toLowerCase()
+          case 'not_equals':
+            return String(value).toLowerCase() !== filterValue.toLowerCase()
+          case 'contains':
+            return String(value).toLowerCase().includes(filterValue.toLowerCase())
+          case 'not_contains':
+            return !String(value).toLowerCase().includes(filterValue.toLowerCase())
+          case 'greater_than':
+            return Number(value) > Number(filterValue)
+          case 'less_than':
+            return Number(value) < Number(filterValue)
+          case 'greater_equal':
+            return Number(value) >= Number(filterValue)
+          case 'less_equal':
+            return Number(value) <= Number(filterValue)
+          default:
+            return true
+        }
+      })
+    })
+  }
+
+  const filteredLogs = (() => {
+    let result = logs
+
+    // Apply saved view filters
+    if (selectedView && selectedView.filters && selectedView.filters.length > 0) {
+      result = applyFilters(result, selectedView.filters)
+    }
+
+    // Apply manual filters
+    if (filter.tableName) {
+      result = result.filter((log) => log.tableName.toLowerCase().includes(filter.tableName.toLowerCase()))
+    }
+    if (filter.recordId) {
+      result = result.filter((log) => log.recordId === filter.recordId)
+    }
+
+    return result
+  })()
+
+  const handleSaveListView = async (view: { name: string; columns: string[]; filters: any[] }) => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/admin/list-views', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: view.name,
+          entityType: 'auditLog',
+          columns: view.columns,
+          filters: view.filters,
+        }),
+      })
+
+      if (response.ok) {
+        await fetchListViews()
+      }
+    } catch (error) {
+      console.error('Error saving list view:', error)
+      throw error
+    }
+  }
+
+  const handleDeleteView = async (viewId: string) => {
+    if (!confirm('Are you sure you want to delete this list view?')) return
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/admin/list-views/${viewId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        if (selectedView?.id === viewId) {
+          setSelectedView(null)
+        }
+        await fetchListViews()
+      }
+    } catch (error) {
+      console.error('Error deleting list view:', error)
+    }
+  }
+
+  const getVisibleColumns = () => {
+    if (selectedView && selectedView.columns) {
+      return selectedView.columns
+    }
+    return availableColumns.map((col) => col.id)
+  }
+
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilter({ ...filter, [e.target.name]: e.target.value })
   }
@@ -74,6 +215,7 @@ export default function AuditLogsPage() {
     try {
       const token = localStorage.getItem('token')
       const params = new URLSearchParams()
+      if (purgeOptions.afterDate) params.append('afterDate', purgeOptions.afterDate)
       if (purgeOptions.beforeDate) params.append('beforeDate', purgeOptions.beforeDate)
       if (purgeOptions.tableName) params.append('tableName', purgeOptions.tableName)
 
@@ -92,7 +234,7 @@ export default function AuditLogsPage() {
       const data = await response.json()
       alert(`Successfully purged ${data.deletedCount} audit log records`)
       setShowPurgeDialog(false)
-      setPurgeOptions({ beforeDate: '', tableName: '' })
+      setPurgeOptions({ afterDate: '', beforeDate: '', tableName: '' })
       fetchLogs()
     } catch (error: any) {
       alert(error.message)
@@ -150,22 +292,55 @@ export default function AuditLogsPage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0 z-10">
+        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">Audit Logs</h2>
-          <button
-            onClick={() => setShowPurgeDialog(true)}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition flex-shrink-0"
-          >
-            Purge Logs
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowListViewModal(true)}
+              className="sf-btn sf-btn-secondary"
+            >
+              Create List View
+            </button>
+            <button
+              onClick={() => setShowPurgeDialog(true)}
+              className="sf-btn sf-btn-secondary"
+            >
+              Purge Logs
+            </button>
+          </div>
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-6">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            {/* Filters */}
+            {/* List View Selector & Filters */}
             <div className="p-4 border-b border-gray-200">
-              <div className="flex gap-4 flex-wrap">
+              <div className="flex gap-4 flex-wrap items-center">
+                <div className="flex-1 min-w-[200px]">
+                  <select
+                    value={selectedView?.id || ''}
+                    onChange={(e) => {
+                      const view = listViews.find((v) => v.id === e.target.value)
+                      setSelectedView(view || null)
+                    }}
+                    className="sf-input w-full"
+                  >
+                    <option value="">All Audit Logs (Default View)</option>
+                    {listViews.map((view) => (
+                      <option key={view.id} value={view.id}>
+                        {view.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {selectedView && (
+                  <button
+                    onClick={() => handleDeleteView(selectedView.id)}
+                    className="text-red-600 hover:text-red-900 text-sm"
+                  >
+                    Delete View
+                  </button>
+                )}
                 <div className="flex-1 min-w-[200px]">
                   <input
                     type="text"
@@ -173,7 +348,7 @@ export default function AuditLogsPage() {
                     placeholder="Filter by table name..."
                     value={filter.tableName}
                     onChange={handleFilterChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="sf-input w-full"
                   />
                 </div>
                 <div className="flex-1 min-w-[200px]">
@@ -183,12 +358,32 @@ export default function AuditLogsPage() {
                     placeholder="Filter by record ID..."
                     value={filter.recordId}
                     onChange={handleFilterChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="sf-input w-full"
+                  />
+                </div>
+                <div className="flex-1 min-w-[150px]">
+                  <input
+                    type="date"
+                    name="startDate"
+                    placeholder="Start date..."
+                    value={filter.startDate}
+                    onChange={handleFilterChange}
+                    className="sf-input w-full"
+                  />
+                </div>
+                <div className="flex-1 min-w-[150px]">
+                  <input
+                    type="date"
+                    name="endDate"
+                    placeholder="End date..."
+                    value={filter.endDate}
+                    onChange={handleFilterChange}
+                    className="sf-input w-full"
                   />
                 </div>
                 <button
                   onClick={handleSearch}
-                  className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition flex-shrink-0"
+                  className="sf-btn sf-btn-primary"
                 >
                   Search
                 </button>
@@ -206,108 +401,80 @@ export default function AuditLogsPage() {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
+                      {getVisibleColumns().map((columnId: string) => {
+                        const column = availableColumns.find((c) => c.id === columnId)
+                        return (
+                          <th
+                            key={columnId}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            {column?.label}
+                          </th>
+                        )
+                      })}
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date/Time
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Action
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Table
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Field
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Old Value
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        New Value
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Changed By
+                        Details
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {logs.length === 0 ? (
+                    {filteredLogs.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                        <td
+                          colSpan={getVisibleColumns().length + 1}
+                          className="px-6 py-8 text-center text-gray-500"
+                        >
                           No audit logs found
                         </td>
                       </tr>
                     ) : (
-                      logs.map((log) => {
-                        // Check if changes are in field-level format
-                        const isFieldLevel = typeof log.changes === 'object' &&
-                          !log.changes.created &&
-                          !log.changes.updated &&
-                          !log.changes.deleted
-
-                        if (isFieldLevel) {
-                          // Render one row per field change
-                          return Object.entries(log.changes).map(([field, value]: [string, any], index) => (
-                            <tr key={`${log.id}-${index}`} className="hover:bg-gray-50">
-                              {index === 0 ? (
-                                <>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900" rowSpan={Object.keys(log.changes).length}>
+                      filteredLogs.map((log) => (
+                        <tr key={log.id} className="hover:bg-gray-50">
+                          {getVisibleColumns().map((columnId: string) => {
+                            switch (columnId) {
+                              case 'createdAt':
+                                return (
+                                  <td key={columnId} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {formatDateTimeInTimezone(log.createdAt, userTimezone)}
                                   </td>
-                                  <td className="px-6 py-4 whitespace-nowrap" rowSpan={Object.keys(log.changes).length}>
+                                )
+                              case 'action':
+                                return (
+                                  <td key={columnId} className="px-6 py-4 whitespace-nowrap">
                                     <span
                                       className={`px-2 py-1 text-xs font-medium rounded-full ${getActionColor(log.action)}`}
                                     >
                                       {log.action}
                                     </span>
                                   </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900" rowSpan={Object.keys(log.changes).length}>
+                                )
+                              case 'tableName':
+                                return (
+                                  <td key={columnId} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {log.tableName}
                                   </td>
-                                </>
-                              ) : null}
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {field}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-                                {String(value.old)}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
-                                {String(value.new)}
-                              </td>
-                              {index === 0 ? (
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900" rowSpan={Object.keys(log.changes).length}>
-                                  {log.changedBy}
-                                </td>
-                              ) : null}
-                            </tr>
-                          ))
-                        } else {
-                          // Fallback for other formats (CREATE, DELETE, or old format)
-                          return (
-                            <tr key={log.id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {formatDateTimeInTimezone(log.createdAt, userTimezone)}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span
-                                  className={`px-2 py-1 text-xs font-medium rounded-full ${getActionColor(log.action)}`}
-                                >
-                                  {log.action}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {log.tableName}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-900" colSpan={3}>
-                                {renderChanges(log.changes)}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {log.changedBy}
-                              </td>
-                            </tr>
-                          )
-                        }
-                      })
+                                )
+                              case 'recordId':
+                                return (
+                                  <td key={columnId} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {log.recordId || '-'}
+                                  </td>
+                                )
+                              case 'changedBy':
+                                return (
+                                  <td key={columnId} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {log.changedBy}
+                                  </td>
+                                )
+                              default:
+                                return null
+                            }
+                          })}
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {renderChanges(log.changes)}
+                          </td>
+                        </tr>
+                      ))
                     )}
                   </tbody>
                 </table>
@@ -329,13 +496,27 @@ export default function AuditLogsPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Delete logs from this date (optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={purgeOptions.afterDate}
+                    onChange={(e) => setPurgeOptions({ ...purgeOptions, afterDate: e.target.value })}
+                    className="sf-input w-full"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Leave empty to start from the beginning
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Delete logs before this date (optional)
                   </label>
                   <input
                     type="date"
                     value={purgeOptions.beforeDate}
                     onChange={(e) => setPurgeOptions({ ...purgeOptions, beforeDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="sf-input w-full"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Leave empty to delete all audit logs
@@ -350,7 +531,7 @@ export default function AuditLogsPage() {
                     value={purgeOptions.tableName}
                     onChange={(e) => setPurgeOptions({ ...purgeOptions, tableName: e.target.value })}
                     placeholder="e.g., Patron, User"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="sf-input w-full"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Leave empty to delete logs for all tables
@@ -361,17 +542,17 @@ export default function AuditLogsPage() {
                 <button
                   onClick={handlePurge}
                   disabled={purging}
-                  className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 sf-btn sf-btn-danger disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {purging ? 'Purging...' : 'Purge Logs'}
                 </button>
                 <button
                   onClick={() => {
                     setShowPurgeDialog(false)
-                    setPurgeOptions({ beforeDate: '', tableName: '' })
+                    setPurgeOptions({ afterDate: '', beforeDate: '', tableName: '' })
                   }}
                   disabled={purging}
-                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 sf-btn sf-btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
@@ -380,6 +561,14 @@ export default function AuditLogsPage() {
           </div>
         </div>
       )}
+
+      <ListViewModal
+        isOpen={showListViewModal}
+        onClose={() => setShowListViewModal(false)}
+        entityType="auditLog"
+        availableColumns={availableColumns}
+        onSave={handleSaveListView}
+      />
     </div>
   )
 }

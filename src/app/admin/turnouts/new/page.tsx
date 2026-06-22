@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import AdminSidebar from '@/components/AdminSidebar'
 
 interface Patron {
@@ -12,6 +12,7 @@ interface Patron {
 
 export default function NewTurnoutPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [patrons, setPatrons] = useState<Patron[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -29,7 +30,12 @@ export default function NewTurnoutPage() {
 
   useEffect(() => {
     fetchPatrons()
-  }, [])
+    // Pre-populate accountNumber from URL parameter
+    const accountNumber = searchParams.get('accountNumber')
+    if (accountNumber) {
+      setFormData(prev => ({ ...prev, accountNumber }))
+    }
+  }, [searchParams])
 
   const fetchPatrons = async () => {
     try {

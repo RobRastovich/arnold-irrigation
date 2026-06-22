@@ -21,8 +21,8 @@ test.describe('Audit Log Operations', () => {
     await page.click('text=Audit Logs')
     await page.waitForURL('/admin/audit-logs')
 
-    // Wait for data to load
-    await page.waitForSelector('tbody tr', { timeout: 10000 })
+    // Wait for data to load with network idle
+    await page.waitForLoadState('networkidle')
 
     // Verify audit logs table is visible
     const table = page.locator('table')
@@ -38,20 +38,20 @@ test.describe('Audit Log Operations', () => {
     await page.click('text=Audit Logs')
     await page.waitForURL('/admin/audit-logs')
 
-    // Wait for data to load
-    await page.waitForSelector('tbody tr', { timeout: 10000 })
+    // Wait for data to load with network idle
+    await page.waitForLoadState('networkidle')
 
     // Get initial count of logs
     const initialCount = await page.locator('tbody tr').count()
 
-    // Filter by table name (if filter input exists)
-    const filterInput = page.locator('input[placeholder*="filter"], input[placeholder*="search"]').first()
+    // Filter by table name
+    const filterInput = page.locator('input[placeholder*="table name"]').first()
     if (await filterInput.isVisible()) {
       await filterInput.fill('Patron')
-      await page.keyboard.press('Enter')
+      await page.click('text=Search')
 
       // Wait for filtered results
-      await page.waitForTimeout(1000)
+      await page.waitForLoadState('networkidle')
 
       // Verify filtered results
       const filteredCount = await page.locator('tbody tr').count()
@@ -64,8 +64,8 @@ test.describe('Audit Log Operations', () => {
     await page.click('text=Audit Logs')
     await page.waitForURL('/admin/audit-logs')
 
-    // Wait for data to load
-    await page.waitForSelector('tbody tr', { timeout: 10000 })
+    // Wait for data to load with network idle
+    await page.waitForLoadState('networkidle')
 
     // Click on first audit log row
     await page.click('tbody tr:first-child')

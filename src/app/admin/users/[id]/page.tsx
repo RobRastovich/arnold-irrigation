@@ -101,146 +101,84 @@ export default function UserDetailPage() {
   return (
     <div className="min-h-screen bg-gray-100 flex">
       <AdminSidebar />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col">
         {/* Top Bar */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0 z-10">
+        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">User Details</h2>
           <div className="flex gap-2">
             <Link
               href={`/admin/users/${user.id}/edit`}
-              className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition flex-shrink-0"
+              className="sf-btn sf-btn-primary"
             >
-              Edit User
-            </Link>
-            <Link
-              href="/admin/users"
-              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition flex-shrink-0"
-            >
-              Back to Users
+              Edit
             </Link>
           </div>
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-6 overflow-auto">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              {/* User Header */}
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {user.firstName} {user.lastName}
-                  </h1>
-                  <p className="text-gray-600">{user.email}</p>
-                </div>
-                <div className="flex gap-2">
-                  <span
-                    className={`px-3 py-1 text-sm font-medium rounded-full ${getRoleColor(user.role)}`}
-                  >
-                    {user.role}
-                  </span>
-                  <span
-                    className={`px-3 py-1 text-sm font-medium rounded-full ${
-                      user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {user.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
+        <main className="flex-1 p-4">
+          <div className="space-y-3">
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                {error}
               </div>
+            )}
 
-              {/* User Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Account Information */}
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Account Information</h3>
-                  <dl className="space-y-3">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Email</dt>
-                      <dd className="text-sm text-gray-900">{user.email}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Role</dt>
-                      <dd className="text-sm text-gray-900">{user.role}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Status</dt>
-                      <dd className="text-sm text-gray-900">{user.isActive ? 'Active' : 'Inactive'}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Email Verified</dt>
-                      <dd className="text-sm text-gray-900">{user.emailVerified ? 'Yes' : 'No'}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Timezone</dt>
-                      <dd className="text-sm text-gray-900">{user.timezone}</dd>
-                    </div>
-                  </dl>
+            {/* Basic Information */}
+            <div className="sf-card">
+              <div className="sf-card-header">Basic Information</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="sf-field-label">Name</p>
+                  <p className="sf-field-value">{user.firstName} {user.lastName}</p>
                 </div>
-
-                {/* Personal Information */}
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
-                  <dl className="space-y-3">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">First Name</dt>
-                      <dd className="text-sm text-gray-900">{user.firstName}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Last Name</dt>
-                      <dd className="text-sm text-gray-900">{user.lastName}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Phone</dt>
-                      <dd className="text-sm text-gray-900">{user.phone || 'N/A'}</dd>
-                    </div>
-                  </dl>
+                <div>
+                  <p className="sf-field-label">Email</p>
+                  <p className="sf-field-value">{user.email}</p>
                 </div>
-
-                {/* Address Information */}
-                <div className="border border-gray-200 rounded-lg p-4 md:col-span-2">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Address Information</h3>
-                  <dl className="space-y-3">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Street Address</dt>
-                      <dd className="text-sm text-gray-900">{user.address || 'N/A'}</dd>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500">City</dt>
-                        <dd className="text-sm text-gray-900">{user.city || 'N/A'}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500">State</dt>
-                        <dd className="text-sm text-gray-900">{user.state || 'N/A'}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500">ZIP</dt>
-                        <dd className="text-sm text-gray-900">{user.zip || 'N/A'}</dd>
-                      </div>
-                    </div>
-                  </dl>
+                <div>
+                  <p className="sf-field-label">Role</p>
+                  <p className="sf-field-value">{user.role}</p>
                 </div>
-
-                {/* Timestamps */}
-                <div className="border border-gray-200 rounded-lg p-4 md:col-span-2">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Timestamps</h3>
-                  <dl className="space-y-3">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Created At</dt>
-                      <dd className="text-sm text-gray-900">
-                        {formatDateTimeInTimezone(user.createdAt, userTimezone)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Updated At</dt>
-                      <dd className="text-sm text-gray-900">
-                        {formatDateTimeInTimezone(user.updatedAt, userTimezone)}
-                      </dd>
-                    </div>
-                  </dl>
+                <div>
+                  <p className="sf-field-label">Status</p>
+                  <p className="sf-field-value">{user.isActive ? 'Active' : 'Inactive'}</p>
+                </div>
+                <div>
+                  <p className="sf-field-label">Email Verified</p>
+                  <p className="sf-field-value">{user.emailVerified ? 'Yes' : 'No'}</p>
+                </div>
+                <div>
+                  <p className="sf-field-label">Timezone</p>
+                  <p className="sf-field-value">{user.timezone}</p>
+                </div>
+                <div>
+                  <p className="sf-field-label">Phone</p>
+                  <p className="sf-field-value">{user.phone || '-'}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <p className="sf-field-label">Address</p>
+                  <p className="sf-field-value">{user.address || '-'}</p>
+                </div>
+                <div>
+                  <p className="sf-field-label">City</p>
+                  <p className="sf-field-value">{user.city || '-'}</p>
+                </div>
+                <div>
+                  <p className="sf-field-label">State</p>
+                  <p className="sf-field-value">{user.state || '-'}</p>
+                </div>
+                <div>
+                  <p className="sf-field-label">ZIP</p>
+                  <p className="sf-field-value">{user.zip || '-'}</p>
+                </div>
+                <div>
+                  <p className="sf-field-label">Created At</p>
+                  <p className="sf-field-value">{formatDateTimeInTimezone(user.createdAt, userTimezone)}</p>
+                </div>
+                <div>
+                  <p className="sf-field-label">Updated At</p>
+                  <p className="sf-field-value">{formatDateTimeInTimezone(user.updatedAt, userTimezone)}</p>
                 </div>
               </div>
             </div>

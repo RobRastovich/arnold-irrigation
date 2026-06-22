@@ -21,7 +21,10 @@ test.describe('Turnout CRUD Operations', () => {
     await page.click('text=Turnouts')
     await page.waitForURL('/admin/turnouts')
 
-    // Wait for data to load
+    // Wait for data to load with network idle
+    await page.waitForLoadState('networkidle')
+
+    // Wait for table rows to appear
     await page.waitForSelector('tbody tr', { timeout: 10000 })
 
     // Get initial count of turnouts
@@ -31,8 +34,8 @@ test.describe('Turnout CRUD Operations', () => {
     await page.click('text=Add Turnout')
     await page.waitForURL('/admin/turnouts/new')
 
-    // Fill in turnout details
-    await page.selectOption('select', 'Test Patron (TEST-1781902865074)')
+    // Fill in turnout details - select first available patron (skip placeholder)
+    await page.selectOption('select[name="accountNumber"]', { index: 1 })
     await page.fill('input[name="canal"]', 'Main Canal')
     await page.fill('input[name="gate"]', 'Gate 1')
     await page.fill('input[name="deliveredAcres"]', '40')
@@ -41,10 +44,11 @@ test.describe('Turnout CRUD Operations', () => {
     // Submit form
     await page.click('button[type="submit"]')
 
-    // Wait for navigation back to turnouts list
-    await page.waitForURL('/admin/turnouts')
+    // Wait for navigation back to turnouts list with network idle
+    await page.waitForURL('/admin/turnouts', { timeout: 30000 })
+    await page.waitForLoadState('networkidle')
 
-    // Wait for data to load
+    // Wait for table rows to appear
     await page.waitForSelector('tbody tr', { timeout: 10000 })
 
     // Verify turnout was created by checking count increased
@@ -57,11 +61,14 @@ test.describe('Turnout CRUD Operations', () => {
     await page.click('text=Turnouts')
     await page.waitForURL('/admin/turnouts')
 
-    // Wait for data to load
+    // Wait for data to load with network idle
+    await page.waitForLoadState('networkidle')
+
+    // Wait for table rows to appear
     await page.waitForSelector('tbody tr', { timeout: 10000 })
 
-    // Click on first turnout's View button
-    await page.click('tbody tr:first-child button:has-text("View")')
+    // Click on first turnout's Canal/Gate link
+    await page.click('tbody tr:first-child td:nth-child(3) a')
 
     // Verify turnout details page loads by checking URL
     await page.waitForURL(/\/admin\/turnouts\/.+/)
@@ -72,11 +79,14 @@ test.describe('Turnout CRUD Operations', () => {
     await page.click('text=Turnouts')
     await page.waitForURL('/admin/turnouts')
 
-    // Wait for data to load
+    // Wait for data to load with network idle
+    await page.waitForLoadState('networkidle')
+
+    // Wait for table rows to appear
     await page.waitForSelector('tbody tr', { timeout: 10000 })
 
-    // Click on first turnout's Edit button
-    await page.click('tbody tr:first-child button:has-text("Edit")')
+    // Click on first turnout's Edit link
+    await page.click('tbody tr:first-child a:has-text("Edit")')
     await page.waitForURL(/\/admin\/turnouts\/.+\/edit/)
 
     // Update turnout details
@@ -86,8 +96,9 @@ test.describe('Turnout CRUD Operations', () => {
     // Submit form
     await page.click('button[type="submit"]')
 
-    // Wait for navigation to turnout detail page
-    await page.waitForURL(/\/admin\/turnouts\/.+/)
+    // Wait for navigation to turnout detail page with network idle
+    await page.waitForURL(/\/admin\/turnouts\/.+/, { timeout: 30000 })
+    await page.waitForLoadState('networkidle')
   })
 
 

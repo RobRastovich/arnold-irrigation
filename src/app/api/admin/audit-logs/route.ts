@@ -15,11 +15,22 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const tableName = searchParams.get('tableName')
     const recordId = searchParams.get('recordId')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
     const limit = parseInt(searchParams.get('limit') || '100')
 
     const where: any = {}
     if (tableName) where.tableName = tableName
     if (recordId) where.recordId = recordId
+    if (startDate || endDate) {
+      where.createdAt = {}
+      if (startDate) where.createdAt.gte = new Date(startDate)
+      if (endDate) {
+        const end = new Date(endDate)
+        end.setHours(23, 59, 59, 999)
+        where.createdAt.lte = end
+      }
+    }
 
     const logs = await prisma.auditLog.findMany({
       where,
@@ -49,13 +60,17 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const beforeDate = searchParams.get('beforeDate')
+    const afterDate = searchParams.get('afterDate')
     const tableName = searchParams.get('tableName')
 
     const where: any = {}
-    if (beforeDate) {
-      const date = new Date(beforeDate)
-      where.createdAt = {
-        lt: date,
+    if (beforeDate || afterDate) {
+      where.createdAt = {}
+      if (afterDate) where.createdAt.gte = new Date(afterDate)
+      if (beforeDate) {
+        const end = new Date(beforeDate)
+        end.setHours(23, 59, 59, 999)
+        where.createdAt.lte = end
       }
     }
     if (tableName) {

@@ -21,6 +21,7 @@ export async function GET(
         },
         patron: {
           select: {
+            id: true,
             firstName: true,
             lastName: true,
           },
@@ -94,6 +95,7 @@ export async function PUT(
         notes: true,
         patron: {
           select: {
+            id: true,
             firstName: true,
             lastName: true,
           },

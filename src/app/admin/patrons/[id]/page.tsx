@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
+import WindowShade from '@/components/WindowShade'
+import AddContactModal from '@/components/AddContactModal'
+import AddNoteModal from '@/components/AddNoteModal'
 
 export default function PatronDetailPage() {
   const router = useRouter()
@@ -11,16 +14,23 @@ export default function PatronDetailPage() {
   const [patron, setPatron] = useState<any>(null)
   const [turnouts, setTurnouts] = useState<any[]>([])
   const [notes, setNotes] = useState<any[]>([])
-  const [newNote, setNewNote] = useState('')
-  const [addingNote, setAddingNote] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showContactModal, setShowContactModal] = useState(false)
+  const [showNoteModal, setShowNoteModal] = useState(false)
+  const [selectedNote, setSelectedNote] = useState<any>(null)
+  const [showNoteDetailModal, setShowNoteDetailModal] = useState(false)
 
   useEffect(() => {
     fetchPatron()
-    fetchTurnouts()
-    fetchNotes()
   }, [params.id])
+
+  useEffect(() => {
+    if (patron) {
+      fetchTurnouts()
+      fetchNotes()
+    }
+  }, [patron])
 
   const fetchPatron = async () => {
     try {
@@ -80,34 +90,12 @@ export default function PatronDetailPage() {
     }
   }
 
-  const handleAddNote = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newNote.trim()) return
+  const handleContactAdded = () => {
+    fetchPatron()
+  }
 
-    setAddingNote(true)
-    try {
-      const token = localStorage.getItem('token')
-      const response = await fetch(`/api/admin/patrons/${params.id}/notes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ notes: newNote }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to add note')
-      }
-
-      setNewNote('')
-      fetchNotes()
-    } catch (err) {
-      setError('Error adding note')
-      console.error(err)
-    } finally {
-      setAddingNote(false)
-    }
+  const handleNoteAdded = () => {
+    fetchNotes()
   }
 
   if (loading) {
@@ -154,28 +142,28 @@ export default function PatronDetailPage() {
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-6">
-          <div className="space-y-6">
+        <main className="flex-1 p-4">
+          <div className="space-y-3">
             {/* Basic Information */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="sf-card">
+              <div className="sf-card-header">Basic Information</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500">Account Number</p>
-                  <p className="font-medium">{patron.accountNumber}</p>
+                  <p className="sf-field-label">Account Number</p>
+                  <p className="sf-field-value">{patron.accountNumber}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Legal Name</p>
-                  <p className="font-medium">{patron.legalName || 'N/A'}</p>
+                  <p className="sf-field-label">Legal Name</p>
+                  <p className="sf-field-value">{patron.legalName || 'N/A'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Name</p>
-                  <p className="font-medium">{patron.firstName} {patron.lastName}</p>
+                  <p className="sf-field-label">Name</p>
+                  <p className="sf-field-value">{patron.firstName} {patron.lastName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Status</p>
+                  <p className="sf-field-label">Status</p>
                   <span
-                    className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    className={`px-2 py-1 text-xs font-medium rounded ${
                       patron.isActive
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
@@ -184,219 +172,340 @@ export default function PatronDetailPage() {
                     {patron.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </div>
+                <div>
+                  <p className="sf-field-label">Primary Email</p>
+                  <p className="sf-field-value">{patron.primaryEmail}</p>
+                </div>
+                <div>
+                  <p className="sf-field-label">Primary Phone</p>
+                  <p className="sf-field-value">{patron.primaryPhone}</p>
+                </div>
               </div>
             </div>
 
-            {/* Contact Information */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h3>
+            {/* Service & Mailing Address */}
+            <div className="sf-card">
+              <div className="sf-card-header">Addresses</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500">Primary Email</p>
-                  <p className="font-medium">{patron.primaryEmail}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Primary Phone</p>
-                  <p className="font-medium">{patron.primaryPhone}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Service Address */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Service Address</h3>
-              <div>
-                <p className="font-medium">{patron.serviceStreet}</p>
-                <p className="text-gray-600">
-                  {patron.serviceCity}, {patron.serviceState} {patron.serviceZip}
-                </p>
-                <p className="text-gray-600">{patron.serviceCountry}</p>
-              </div>
-            </div>
-
-            {/* Mailing Address */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Mailing Address</h3>
-              {patron.mailingStreet ? (
-                <div>
-                  <p className="font-medium">{patron.mailingStreet}</p>
-                  <p className="text-gray-600">
-                    {patron.mailingCity}, {patron.mailingState} {patron.mailingZip}
+                  <p className="sf-field-label">Service Address</p>
+                  <p className="sf-field-value">{patron.serviceStreet}</p>
+                  <p className="sf-field-value">
+                    {patron.serviceCity}, {patron.serviceState} {patron.serviceZip}
                   </p>
-                  <p className="text-gray-600">{patron.mailingCountry || 'N/A'}</p>
+                  <p className="sf-field-value">{patron.serviceCountry}</p>
                 </div>
-              ) : (
-                <p className="text-gray-500">No mailing address on file</p>
-              )}
+                <div>
+                  <p className="sf-field-label">Mailing Address</p>
+                  {patron.mailingStreet ? (
+                    <div>
+                      <p className="sf-field-value">{patron.mailingStreet}</p>
+                      <p className="sf-field-value">
+                        {patron.mailingCity}, {patron.mailingState} {patron.mailingZip}
+                      </p>
+                      <p className="sf-field-value">{patron.mailingCountry || 'N/A'}</p>
+                    </div>
+                  ) : (
+                    <p className="sf-field-value text-gray-500">No mailing address on file</p>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Water Information */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Water Information</h3>
+            <div className="sf-card">
+              <div className="sf-card-header">Water Information</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Total Water Right Acres</p>
-                  <p className="font-medium">{patron.totalWaterRightAcres}</p>
+                <div className={(() => {
+                  const totalDeliveredAcres = turnouts.reduce((sum, t) => sum + t.deliveredAcres, 0)
+                  const waterRightMismatch = Math.abs(patron.totalWaterRightAcres - totalDeliveredAcres) > 0.01
+                  return waterRightMismatch ? 'sf-field-highlighted' : ''
+                })()}>
+                  <p className="sf-field-label">Total Water Right Acres</p>
+                  <p className="sf-field-value">{patron.totalWaterRightAcres}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Assessed Acres</p>
-                  <p className="font-medium">{patron.assessedAcres}</p>
+                <div className={(() => {
+                  const totalAcresOwned = turnouts.reduce((sum, t) => sum + t.acresOwned, 0)
+                  const assessedMismatch = Math.abs(patron.assessedAcres - totalAcresOwned) > 0.01
+                  return assessedMismatch ? 'sf-field-highlighted' : ''
+                })()}>
+                  <p className="sf-field-label">Assessed Acres</p>
+                  <p className="sf-field-value">{patron.assessedAcres}</p>
                 </div>
               </div>
             </div>
 
-            {/* Notes */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Notes</h3>
-
-              <form onSubmit={handleAddNote} className="mb-6">
-                <textarea
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="Add a new note..."
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 mb-2"
-                />
+            {/* Notes - Window Shade */}
+            <WindowShade
+              title={`Notes (${notes.length})`}
+              defaultOpen={false}
+              actionButton={
                 <button
-                  type="submit"
-                  disabled={addingNote || !newNote.trim()}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
+                  className="sf-btn sf-btn-secondary text-xs"
+                  onClick={() => setShowNoteModal(true)}
                 >
-                  {addingNote ? 'Adding...' : 'Add Note'}
+                  New Note
                 </button>
-              </form>
-
+              }
+            >
               {notes.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No notes yet</p>
+                <p className="sf-field-value text-gray-500 text-center py-2">No notes yet</p>
               ) : (
-                <div className="space-y-4">
-                  {notes.map((note) => (
-                    <div key={note.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <p className="text-sm text-gray-500">
+                <table className="sf-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Created By</th>
+                      <th>Note</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {notes.map((note) => (
+                      <tr key={note.id}>
+                        <td className="text-xs">
                           {new Date(note.timeReceived).toLocaleString()}
-                        </p>
-                        {note.creator && (
-                          <p className="text-sm text-gray-600">
-                            by {note.creator.firstName} {note.creator.lastName}
-                          </p>
-                        )}
-                      </div>
-                      <p className="text-gray-900">{note.notes}</p>
-                    </div>
-                  ))}
-                </div>
+                        </td>
+                        <td className="text-xs">
+                          {note.creator ? (
+                            `${note.creator.firstName} ${note.creator.lastName}`
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td>
+                          {note.notes.length > 100
+                            ? `${note.notes.substring(0, 100)}...`
+                            : note.notes}
+                        </td>
+                        <td>
+                          <button
+                            onClick={() => {
+                              setSelectedNote(note)
+                              setShowNoteDetailModal(true)
+                            }}
+                            className="text-blue-600 hover:text-blue-900 text-xs"
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
-            </div>
+            </WindowShade>
 
-            {/* Additional Contacts */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Additional Contacts</h3>
+            {/* Additional Contacts - Window Shade */}
+            <WindowShade
+              title={`Additional Contacts (${patron.additionalContacts?.length || 0})`}
+              defaultOpen={false}
+              actionButton={
+                <button
+                  className="sf-btn sf-btn-secondary text-xs"
+                  onClick={() => setShowContactModal(true)}
+                >
+                  New Contact
+                </button>
+              }
+            >
               {patron.additionalContacts && patron.additionalContacts.length > 0 ? (
-                <div className="space-y-3">
-                  {patron.additionalContacts.map((contact: any) => (
-                    <div key={contact.id} className="border border-gray-200 rounded-lg p-4">
-                      <p className="font-medium">{contact.name}</p>
-                      {contact.email && <p className="text-sm text-gray-600">{contact.email}</p>}
-                      {contact.phone && <p className="text-sm text-gray-600">{contact.phone}</p>}
-                    </div>
-                  ))}
-                </div>
+                <table className="sf-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Address</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {patron.additionalContacts.map((contact: any) => (
+                      <tr key={contact.id}>
+                        <td className="font-medium">
+                          {contact.firstName} {contact.lastName}
+                        </td>
+                        <td className="capitalize">
+                          {contact.contactType?.replace('_', ' ').toLowerCase() || '-'}
+                        </td>
+                        <td>{contact.email || '-'}</td>
+                        <td>{contact.mobilePhone || '-'}</td>
+                        <td>
+                          {contact.street ? (
+                            <>
+                              {contact.street}, {contact.city} {contact.state} {contact.zip}
+                            </>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               ) : (
-                <p className="text-gray-500">No additional contacts</p>
+                <p className="sf-field-value text-gray-500">No additional contacts</p>
               )}
-            </div>
+            </WindowShade>
 
-            {/* Documents */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Documents</h3>
+            {/* Documents - Window Shade */}
+            <WindowShade
+              title={`Documents (${patron.documents?.length || 0})`}
+              defaultOpen={false}
+            >
               {patron.documents && patron.documents.length > 0 ? (
-                <div className="space-y-3">
-                  {patron.documents.map((doc: any) => (
-                    <div key={doc.id} className="border border-gray-200 rounded-lg p-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{doc.fileName}</p>
-                        <p className="text-sm text-gray-600">{doc.mimeType}</p>
-                      </div>
-                      <p className="text-xs text-gray-400">
-                        {new Date(doc.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                <table className="sf-table">
+                  <thead>
+                    <tr>
+                      <th>File Name</th>
+                      <th>Type</th>
+                      <th>Uploaded</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {patron.documents.map((doc: any) => (
+                      <tr key={doc.id}>
+                        <td className="font-medium">{doc.fileName}</td>
+                        <td className="text-xs">{doc.mimeType}</td>
+                        <td className="text-xs">
+                          {new Date(doc.createdAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               ) : (
-                <p className="text-gray-500">No documents</p>
+                <p className="sf-field-value text-gray-500">No documents</p>
               )}
-            </div>
+            </WindowShade>
 
-            {/* Turnouts */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Turnouts</h3>
+            {/* Turnouts - Window Shade */}
+            <WindowShade
+              title={`Turnouts (${turnouts.length})`}
+              defaultOpen={false}
+              actionButton={
                 <Link
-                  href="/admin/turnouts/new"
-                  className="text-primary-600 hover:text-primary-900 text-sm"
+                  href={`/admin/turnouts/new?accountNumber=${patron.accountNumber}`}
+                  className="sf-btn sf-btn-secondary text-xs"
                 >
                   Add Turnout
                 </Link>
-              </div>
+              }
+            >
               {turnouts.length > 0 ? (
                 <>
-                  <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="mb-3 p-3 bg-gray-50 rounded">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-gray-500">Total Delivered Acres</p>
-                        <p className="font-medium text-gray-900">
+                        <p className="sf-field-label">Total Delivered Acres</p>
+                        <p className="sf-field-value">
                           {turnouts.reduce((sum, t) => sum + t.deliveredAcres, 0).toFixed(2)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500">Total Acres Owned</p>
-                        <p className="font-medium text-gray-900">
+                        <p className="sf-field-label">Total Acres Owned</p>
+                        <p className="sf-field-value">
                           {turnouts.reduce((sum, t) => sum + t.acresOwned, 0).toFixed(2)}
                         </p>
                       </div>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    {turnouts.map((turnout) => (
-                      <div key={turnout.id} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <p className="font-medium">{turnout.canal} - {turnout.gate}</p>
-                            <p className="text-sm text-gray-600">Tax Lot: {turnout.taxLotNumber || 'N/A'}</p>
-                          </div>
-                          <Link
-                            href={`/admin/turnouts/${turnout.id}`}
-                            className="text-primary-600 hover:text-primary-900 text-sm"
-                          >
-                            View
-                          </Link>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-500">Delivered Acres</p>
-                            <p className="font-medium">{turnout.deliveredAcres.toFixed(2)}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">Acres Owned</p>
-                            <p className="font-medium">{turnout.acresOwned.toFixed(2)}</p>
-                          </div>
-                        </div>
-                        {turnout.legalDescription && (
-                          <p className="text-sm text-gray-600 mt-2">{turnout.legalDescription}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <table className="sf-table">
+                    <thead>
+                      <tr>
+                        <th>Canal/Gate</th>
+                        <th>Tax Lot</th>
+                        <th>Delivered Acres</th>
+                        <th>Acres Owned</th>
+                        <th>Legal Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {turnouts.map((turnout) => (
+                        <tr key={turnout.id}>
+                          <td>
+                            <Link
+                              href={`/admin/turnouts/${turnout.id}`}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              {turnout.canal} - {turnout.gate}
+                            </Link>
+                          </td>
+                          <td>{turnout.taxLotNumber || 'N/A'}</td>
+                          <td>{turnout.deliveredAcres.toFixed(2)}</td>
+                          <td>{turnout.acresOwned.toFixed(2)}</td>
+                          <td>{turnout.legalDescription || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </>
               ) : (
-                <p className="text-gray-500">No turnouts</p>
+                <p className="sf-field-value text-gray-500">No turnouts</p>
               )}
-            </div>
+            </WindowShade>
           </div>
         </main>
       </div>
+
+      <AddContactModal
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
+        patronId={params.id as string}
+        onContactAdded={handleContactAdded}
+      />
+      <AddNoteModal
+        isOpen={showNoteModal}
+        onClose={() => setShowNoteModal(false)}
+        patronId={params.id as string}
+        onNoteAdded={handleNoteAdded}
+      />
+      {showNoteDetailModal && selectedNote && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">Note Details</h3>
+                <button
+                  onClick={() => setShowNoteDetailModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Date</p>
+                  <p className="text-sm text-gray-900">
+                    {new Date(selectedNote.timeReceived).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Created By</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedNote.creator
+                      ? `${selectedNote.creator.firstName} ${selectedNote.creator.lastName}`
+                      : '-'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Note</p>
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedNote.notes}</p>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowNoteDetailModal(false)}
+                  className="sf-btn sf-btn-secondary"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

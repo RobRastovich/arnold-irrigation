@@ -95,21 +95,29 @@ model AccountNote {
   @@map("account_notes")
 }
 
+enum ContactType {
+  SPOUSE
+  CARETAKER
+  ADDITIONAL_CONTACT
+}
+
 model AdditionalContact {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   patronId    String
-  name        String
+  firstName   String
+  lastName    String
   email       String?
-  phone       String?
+  mobilePhone String?
   street      String?
   city        String?
   state       String?
   zip         String?
   country     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  contactType ContactType @default(ADDITIONAL_CONTACT)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
-  patron      Patron   @relation(fields: [patronId], references: [id], onDelete: Cascade)
+  patron      Patron      @relation(fields: [patronId], references: [id], onDelete: Cascade)
 
   @@map("additional_contacts")
 }
@@ -199,4 +207,20 @@ model Ticket {
   @@index([assignedTo])
   @@index([createdBy])
   @@index([ticketNumber])
+}
+
+model SavedListView {
+  id          String   @id @default(cuid())
+  name        String
+  entityType  String   // "patron", "turnout", etc.
+  columns     Json     // Array of column names to display
+  filters     Json     // Array of filter criteria { field, operator, value }
+  userId      String   // User who created this view
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("saved_list_views")
+  @@index([userId])
+  @@index([entityType])
 }

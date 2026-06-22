@@ -127,117 +127,76 @@ export default function TicketDetailPage() {
   return (
     <div className="min-h-screen bg-gray-100 flex">
       <AdminSidebar />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col">
         {/* Top Bar */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0 z-10">
+        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">Ticket #{ticket.ticketNumber}</h2>
           <div className="flex gap-2">
             <Link
               href={`/admin/tickets/${ticket.id}/edit`}
-              className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition flex-shrink-0"
+              className="sf-btn sf-btn-primary"
             >
-              Edit Ticket
-            </Link>
-            <Link
-              href="/admin/tickets"
-              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition flex-shrink-0"
-            >
-              Back to Tickets
+              Edit
             </Link>
           </div>
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-6 overflow-auto">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              {/* Ticket Header */}
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">{ticket.title}</h1>
-                  <p className="text-gray-600">#{ticket.ticketNumber}</p>
-                </div>
-                <div className="flex gap-2">
-                  <span
-                    className={`px-3 py-1 text-sm font-medium rounded-full ${getTypeColor(ticket.type)}`}
-                  >
-                    {ticket.type.replace('_', ' ')}
-                  </span>
-                  <span
-                    className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(ticket.status)}`}
-                  >
-                    {ticket.status.replace('_', ' ')}
-                  </span>
-                  <span
-                    className={`px-3 py-1 text-sm font-medium rounded-full ${getPriorityColor(ticket.priority)}`}
-                  >
-                    {ticket.priority}
-                  </span>
-                </div>
+        <main className="flex-1 p-4">
+          <div className="space-y-3">
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                {error}
               </div>
+            )}
 
-              {/* Ticket Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Details */}
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Details</h3>
-                  <dl className="space-y-3">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Type</dt>
-                      <dd className="text-sm text-gray-900">{ticket.type.replace('_', ' ')}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Status</dt>
-                      <dd className="text-sm text-gray-900">{ticket.status.replace('_', ' ')}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Priority</dt>
-                      <dd className="text-sm text-gray-900">{ticket.priority}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Assigned To</dt>
-                      <dd className="text-sm text-gray-900">
-                        {ticket.assignedToUser
-                          ? `${ticket.assignedToUser.firstName} ${ticket.assignedToUser.lastName}`
-                          : 'Unassigned'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Created By</dt>
-                      <dd className="text-sm text-gray-900">
-                        {ticket.createdByUser
-                          ? `${ticket.createdByUser.firstName} ${ticket.createdByUser.lastName}`
-                          : 'Unknown'}
-                      </dd>
-                    </div>
-                  </dl>
+            {/* Basic Information */}
+            <div className="sf-card">
+              <div className="sf-card-header">Basic Information</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-3">
+                  <p className="sf-field-label">Title</p>
+                  <p className="sf-field-value">{ticket.title}</p>
                 </div>
-
-                {/* Timestamps */}
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Timestamps</h3>
-                  <dl className="space-y-3">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Created At</dt>
-                      <dd className="text-sm text-gray-900">
-                        {formatDateTimeInTimezone(ticket.createdAt, userTimezone)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Updated At</dt>
-                      <dd className="text-sm text-gray-900">
-                        {formatDateTimeInTimezone(ticket.updatedAt, userTimezone)}
-                      </dd>
-                    </div>
-                  </dl>
+                <div>
+                  <p className="sf-field-label">Type</p>
+                  <p className="sf-field-value">{ticket.type.replace('_', ' ')}</p>
                 </div>
-
-                {/* Description */}
-                <div className="border border-gray-200 rounded-lg p-4 md:col-span-2">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Description</h3>
-                  <p className="text-sm text-gray-900 whitespace-pre-wrap">{ticket.description}</p>
+                <div>
+                  <p className="sf-field-label">Status</p>
+                  <p className="sf-field-value">{ticket.status.replace('_', ' ')}</p>
+                </div>
+                <div>
+                  <p className="sf-field-label">Priority</p>
+                  <p className="sf-field-value">{ticket.priority}</p>
+                </div>
+                <div>
+                  <p className="sf-field-label">Assigned To</p>
+                  <p className="sf-field-value">
+                    {ticket.assignedToUser
+                      ? `${ticket.assignedToUser.firstName} ${ticket.assignedToUser.lastName}`
+                      : 'Unassigned'}
+                  </p>
+                </div>
+                <div>
+                  <p className="sf-field-label">Created By</p>
+                  <p className="sf-field-value">
+                    {ticket.createdByUser
+                      ? `${ticket.createdByUser.firstName} ${ticket.createdByUser.lastName}`
+                      : 'Unknown'}
+                  </p>
+                </div>
+                <div>
+                  <p className="sf-field-label">Created At</p>
+                  <p className="sf-field-value">{formatDateTimeInTimezone(ticket.createdAt, userTimezone)}</p>
+                </div>
+                <div>
+                  <p className="sf-field-label">Updated At</p>
+                  <p className="sf-field-value">{formatDateTimeInTimezone(ticket.updatedAt, userTimezone)}</p>
+                </div>
+                <div className="md:col-span-3">
+                  <p className="sf-field-label">Description</p>
+                  <p className="sf-field-value whitespace-pre-wrap">{ticket.description}</p>
                 </div>
               </div>
             </div>

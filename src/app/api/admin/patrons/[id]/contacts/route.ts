@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma, setCurrentUserId, clearCurrentUserId } from '@/lib/db'
 import { authenticateRequest } from '@/lib/api-auth'
 
 // GET all additional contacts for a patron
@@ -40,32 +38,42 @@ export async function POST(
   try {
     const body = await request.json()
     const {
-      name,
+      firstName,
+      lastName,
       email,
-      phone,
+      mobilePhone,
       street,
       city,
       state,
       zip,
       country,
+      contactType,
     } = body
+
+    const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email
+    setCurrentUserId(user.userId, userName)
 
     const contact = await prisma.additionalContact.create({
       data: {
         patronId: params.id,
-        name,
+        firstName,
+        lastName,
         email,
-        phone,
+        mobilePhone,
         street,
         city,
         state,
         zip,
         country,
+        contactType: contactType || 'ADDITIONAL_CONTACT',
       },
     })
 
+    clearCurrentUserId()
+
     return NextResponse.json(contact, { status: 201 })
   } catch (error) {
+    clearCurrentUserId()
     console.error('Error creating contact:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

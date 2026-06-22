@@ -16,12 +16,16 @@ test.describe('Patron CRUD Operations', () => {
     await page.waitForLoadState('networkidle')
   })
 
+
   test('should create a new patron', async ({ page }) => {
     // Navigate to patrons page
     await page.click('text=Patrons')
     await page.waitForURL('/admin/patrons')
 
-    // Wait for data to load
+    // Wait for data to load with network idle
+    await page.waitForLoadState('networkidle')
+
+    // Wait for table rows to appear
     await page.waitForSelector('tbody tr', { timeout: 10000 })
 
     // Get initial count of patrons
@@ -48,10 +52,11 @@ test.describe('Patron CRUD Operations', () => {
     // Submit form
     await page.click('button[type="submit"]')
 
-    // Wait for navigation back to patrons list
-    await page.waitForURL('/admin/patrons')
+    // Wait for navigation back to patrons list with network idle
+    await page.waitForURL('/admin/patrons', { timeout: 30000 })
+    await page.waitForLoadState('networkidle')
 
-    // Wait for data to load
+    // Wait for table rows to appear
     await page.waitForSelector('tbody tr', { timeout: 10000 })
 
     // Verify patron was created by checking count increased
@@ -64,11 +69,14 @@ test.describe('Patron CRUD Operations', () => {
     await page.click('text=Patrons')
     await page.waitForURL('/admin/patrons')
 
-    // Wait for data to load
+    // Wait for data to load with network idle
+    await page.waitForLoadState('networkidle')
+
+    // Wait for table rows to appear
     await page.waitForSelector('tbody tr', { timeout: 10000 })
 
-    // Click on first patron's View link
-    await page.click('tbody tr:first-child a:has-text("View")')
+    // Click on first patron's name link
+    await page.click('tbody tr:first-child td:nth-child(2) a')
 
     // Verify patron details page loads by checking URL
     await page.waitForURL(/\/admin\/patrons\/.+/)
@@ -79,7 +87,10 @@ test.describe('Patron CRUD Operations', () => {
     await page.click('text=Patrons')
     await page.waitForURL('/admin/patrons')
 
-    // Wait for data to load
+    // Wait for data to load with network idle
+    await page.waitForLoadState('networkidle')
+
+    // Wait for table rows to appear
     await page.waitForSelector('tbody tr', { timeout: 10000 })
 
     // Click on first patron's Edit link
@@ -93,8 +104,9 @@ test.describe('Patron CRUD Operations', () => {
     // Submit form
     await page.click('button[type="submit"]')
 
-    // Wait for navigation to patron detail page
-    await page.waitForURL(/\/admin\/patrons\/.+/)
+    // Wait for navigation to patron detail page with network idle
+    await page.waitForURL(/\/admin\/patrons\/.+/, { timeout: 30000 })
+    await page.waitForLoadState('networkidle')
   })
 
 
