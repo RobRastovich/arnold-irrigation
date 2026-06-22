@@ -28,7 +28,7 @@ export default function AddNoteModal({ isOpen, onClose, patronId, onNoteAdded }:
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          note,
+          notes: note,
           timeReceived: new Date().toISOString(),
         }),
       })

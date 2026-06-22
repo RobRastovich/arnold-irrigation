@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { authenticateRequest } from '@/lib/api-auth'
-
-const prisma = new PrismaClient()
 
 // GET all notes for a patron
 export async function GET(
