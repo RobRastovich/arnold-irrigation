@@ -17,7 +17,12 @@ export async function getPresignedUploadUrl(key: string, contentType: string): P
     Key: key,
     ContentType: contentType,
   })
-  return getSignedUrl(s3Client, command, { expiresIn: 300 })
+  // unsetPayloadSiginingMiddleware disables the CRC32 checksum header that
+  // causes CORS preflight failures when uploading directly from the browser
+  return getSignedUrl(s3Client, command, {
+    expiresIn: 300,
+    unhoistableHeaders: new Set(['x-amz-checksum-crc32', 'x-amz-sdk-checksum-algorithm']),
+  })
 }
 
 export function getPublicUrl(key: string): string {

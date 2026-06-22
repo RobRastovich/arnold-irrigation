@@ -58,10 +58,12 @@ export default function WeirBookImageUpload({
       const { uploadUrl, publicUrl } = await presignRes.json()
 
       // 2. Upload directly to S3
+      // Only send Content-Type — additional headers trigger CORS preflight failures
       const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
         headers: { 'Content-Type': file.type },
         body: file,
+        mode: 'cors',
       })
 
       if (!uploadRes.ok) {
