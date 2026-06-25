@@ -9,6 +9,10 @@ frontend:
       commands:
         - echo "DATABASE_URL=$DATABASE_URL" >> .env.production
         - echo "JWT_SECRET=$JWT_SECRET" >> .env.production
+        - echo "APP_AWS_REGION=$APP_AWS_REGION" >> .env.production
+        - echo "APP_AWS_ACCESS_KEY_ID=$APP_AWS_ACCESS_KEY_ID" >> .env.production
+        - echo "APP_AWS_SECRET_ACCESS_KEY=$APP_AWS_SECRET_ACCESS_KEY" >> .env.production
+        - echo "APP_AWS_S3_BUCKET=$APP_AWS_S3_BUCKET" >> .env.production
         - npx prisma migrate deploy
         - npm run build
   artifacts:

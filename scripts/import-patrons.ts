@@ -5,61 +5,34 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-const CSV_PATH = path.join(__dirname, '../dataFiles/Patrons/Cust.csv')
+const CSV_PATH = path.join(__dirname, '../dataFiles/Patrons/User.csv')
 
 interface CsvRow {
-  acctnbr: string
-  Name: string
-  Phone: string
-  Address1: string
-  Address2: string
-  Address3: string
-  Zip: string
+  Acctnbr: string
+  lname: string
+  fname: string
+  lname2: string
+  fname2: string
+  street1: string
+  city: string
+  state: string
+  zip: string
+  phone: string
+  email: string
+  WRacres: string
+  Ttlasacres: string
   [key: string]: string
 }
 
-/**
- * Parse "Last, First Middle" or "First Last" name into firstName / lastName.
- * The CSV uses "Last, First..." format for most entries.
- */
-function parseName(raw: string): { firstName: string; lastName: string } {
-  const name = raw.trim()
-  const commaIdx = name.indexOf(',')
-  if (commaIdx !== -1) {
-    const lastName = name.substring(0, commaIdx).trim()
-    const firstName = name.substring(commaIdx + 1).trim()
-    return { firstName: firstName || 'Unknown', lastName: lastName || 'Unknown' }
-  }
-  // No comma — treat as "First Last..."
-  const parts = name.split(/\s+/)
-  if (parts.length >= 2) {
-    return { firstName: parts[0], lastName: parts.slice(1).join(' ') }
-  }
-  return { firstName: name || 'Unknown', lastName: 'Unknown' }
-}
-
-/**
- * Parse Address2 field which may contain "Bend, OR" or just a city.
- * Returns { city, state }.
- */
-function parseCityState(address2: string): { city: string; state: string } {
-  const val = address2.trim()
-  if (!val) return { city: 'Bend', state: 'OR' }
-
-  const commaIdx = val.indexOf(',')
-  if (commaIdx !== -1) {
-    const city = val.substring(0, commaIdx).trim()
-    const state = val.substring(commaIdx + 1).trim()
-    return { city: city || 'Bend', state: state || 'OR' }
-  }
-
-  // Single word that looks like "Bend" → assume it's the city
-  const lower = val.toLowerCase()
-  if (lower === 'bend' || lower.length < 30) {
-    return { city: val, state: 'OR' }
-  }
-
-  return { city: 'Bend', state: 'OR' }
+function buildLegalName(row: CsvRow): string {
+  const lname  = (row.lname  || '').trim()
+  const fname  = (row.fname  || '').trim()
+  const lname2 = (row.lname2 || '').trim()
+  const fname2 = (row.fname2 || '').trim()
+  if (!lname && !fname) return ''
+  const primary   = [fname, lname].filter(Boolean).join(' ')
+  const secondary = fname2 || lname2 ? [fname2, lname2].filter(Boolean).join(' ') : ''
+  return secondary ? `${primary} / ${secondary}` : primary
 }
 
 async function main() {
@@ -79,20 +52,20 @@ async function main() {
   let errors = 0
 
   for (const row of rows) {
-    const accountNumber = String(row.acctnbr || '').trim()
+    const accountNumber = String(row.Acctnbr || '').trim()
     if (!accountNumber) { skipped++; continue }
 
-    const { firstName, lastName } = parseName(row.Name || '')
-    const street = (row.Address1 || '').trim().replace(/\s+/g, ' ')
-    const { city, state } = parseCityState(row.Address2 || '')
-    const zip = (row.Zip || '').trim()
-    const phone = (row.Phone || '').trim()
-
-    // Skip rows with no meaningful address
-    const serviceStreet = street || '(Address unknown)'
-    const serviceCity   = city || 'Bend'
-    const serviceState  = state || 'OR'
-    const serviceZip    = zip || '00000'
+    const firstName = (row.fname || '').trim() || 'Unknown'
+    const lastName  = (row.lname || '').trim() || (row.fname ? '' : 'Unknown')
+    const legalName = buildLegalName(row)
+    const street    = (row.street1 || '').trim()
+    const city      = (row.city    || 'Bend').trim()
+    const state     = (row.state   || 'OR').trim()
+    const zip       = (row.zip     || '').trim()
+    const phone     = (row.phone   || '').trim()
+    const email     = (row.email   || '').trim()
+    const wrAcres   = parseFloat(row.WRacres    || '0') || 0
+    const asAcres   = parseFloat(row.Ttlasacres || '0') || 0
 
     try {
       await prisma.patron.upsert({
@@ -100,27 +73,30 @@ async function main() {
         update: {
           firstName,
           lastName,
-          legalName: (row.Name || '').trim(),
-          serviceStreet,
-          serviceCity,
-          serviceState,
-          serviceZip,
-          primaryPhone: phone,
+          legalName,
+          serviceStreet: street || '(Address unknown)',
+          serviceCity:   city,
+          serviceState:  state,
+          serviceZip:    zip || '00000',
+          primaryPhone:  phone,
+          primaryEmail:  email,
+          totalWaterRightAcres: wrAcres,
+          assessedAcres: asAcres,
         },
         create: {
           accountNumber,
           firstName,
           lastName,
-          legalName: (row.Name || '').trim(),
-          serviceStreet,
-          serviceCity,
-          serviceState,
-          serviceZip,
+          legalName,
+          serviceStreet: street || '(Address unknown)',
+          serviceCity:   city,
+          serviceState:  state,
+          serviceZip:    zip || '00000',
           serviceCountry: 'US',
-          primaryPhone: phone,
-          primaryEmail: '',
-          totalWaterRightAcres: 0,
-          assessedAcres: 0,
+          primaryPhone:  phone,
+          primaryEmail:  email,
+          totalWaterRightAcres: wrAcres,
+          assessedAcres: asAcres,
           isActive: true,
         },
       })
