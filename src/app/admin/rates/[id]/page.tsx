@@ -22,6 +22,8 @@ export default function RateDetailPage() {
   const [editingItem, setEditingItem] = useState<any>(null)
   const [editYear, setEditYear] = useState('')
   const [savingYear, setSavingYear] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [genResult, setGenResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   useEffect(() => { fetchRate() }, [params.id])
 
@@ -57,6 +59,26 @@ export default function RateDetailPage() {
       alert(err.message)
     } finally {
       setSavingYear(false)
+    }
+  }
+
+  const handleGenerateAssessment = async () => {
+    if (!confirm(`Generate assessment invoices for all active patrons using rate year ${rate?.year}? This cannot be undone.`)) return
+    setGenerating(true)
+    setGenResult(null)
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`/api/admin/rates/${params.id}/generate-assessment`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to generate')
+      setGenResult({ type: 'success', message: data.message })
+    } catch (err: any) {
+      setGenResult({ type: 'error', message: err.message })
+    } finally {
+      setGenerating(false)
     }
   }
 
@@ -113,10 +135,41 @@ export default function RateDetailPage() {
               </button>
               <h1 className="text-2xl font-bold text-gray-900">Rate Schedule — {rate?.year}</h1>
             </div>
-            <button onClick={handleDeleteRate} disabled={deleting} className="sf-btn sf-btn-danger text-sm">
-              {deleting ? 'Deleting…' : 'Delete Schedule'}
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={handleGenerateAssessment}
+                disabled={generating}
+                className="sf-btn sf-btn-primary"
+              >
+                {generating ? 'Generating…' : '⚡ Generate Assessment'}
+              </button>
+              <button onClick={() => router.push('/admin/invoices?rateId=' + params.id)} className="sf-btn sf-btn-secondary text-sm">
+                View Invoices
+              </button>
+              <button onClick={handleDeleteRate} disabled={deleting} className="sf-btn sf-btn-danger text-sm">
+                {deleting ? 'Deleting…' : 'Delete Schedule'}
+              </button>
+            </div>
           </div>
+
+          {/* Generation result banner */}
+          {genResult && (
+            <div className={`rounded-lg p-4 text-sm font-medium ${
+              genResult.type === 'success'
+                ? 'bg-green-50 border border-green-200 text-green-800'
+                : 'bg-red-50 border border-red-200 text-red-800'
+            }`}>
+              {genResult.message}
+              {genResult.type === 'success' && (
+                <button
+                  onClick={() => router.push('/admin/invoices?rateId=' + params.id)}
+                  className="ml-4 underline"
+                >
+                  View Invoices →
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Year editor */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

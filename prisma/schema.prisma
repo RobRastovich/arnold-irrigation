@@ -80,6 +80,7 @@ model Patron {
   generalNotes          Note[]
   transactionItems      TransactionItem[]
   weirBookItems         WeirBookItem[]
+  invoices              Invoice[]
 
   @@map("patrons")
 }
@@ -321,6 +322,7 @@ model Rate {
   updatedAt DateTime   @updatedAt
 
   items     RateItem[]
+  invoices  Invoice[]
 
   @@map("rates")
   @@index([year])
@@ -342,6 +344,64 @@ model RateItem {
   @@map("rate_items")
   @@index([rateId])
   @@index([rateTypeId])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  VOID
+}
+
+model Invoice {
+  id              String        @id @default(cuid())
+  invoiceNumber   String        @unique
+  accountNumber   String
+  rateId          String
+  status          InvoiceStatus @default(DRAFT)
+  invoiceDate     DateTime      @default(now())
+  dueDate         DateTime?
+  firstName       String
+  lastName        String
+  mailingStreet   String?
+  mailingCity     String?
+  mailingState    String?
+  mailingZip      String?
+  serviceStreet   String
+  serviceCity     String
+  serviceState    String
+  serviceZip      String
+  totalAmount     Decimal       @db.Decimal(12, 2)
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  patron          Patron        @relation(fields: [accountNumber], references: [accountNumber])
+  rate            Rate          @relation(fields: [rateId], references: [id])
+  lineItems       InvoiceLineItem[]
+
+  @@map("invoices")
+  @@index([accountNumber])
+  @@index([rateId])
+  @@index([status])
+}
+
+model InvoiceLineItem {
+  id           String   @id @default(cuid())
+  invoiceId    String
+  rateItemId   String
+  rateCode     String   @db.VarChar(10)
+  description  String
+  chargeType   ChargeType
+  quantity     Decimal  @db.Decimal(12, 4)
+  unitPrice    Decimal  @db.Decimal(10, 2)
+  lineTotal    Decimal  @db.Decimal(12, 2)
+  createdAt    DateTime @default(now())
+
+  invoice      Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_line_items")
+  @@index([invoiceId])
 }
 
 model SavedListView {
