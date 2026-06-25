@@ -74,7 +74,8 @@ export default function PatronsPage() {
   const applyFilters = (patrons: any[], filters: any[]) => {
     return patrons.filter((patron) => {
       return filters.every((filter) => {
-        const value = patron[filter.field]
+        if (!filter.field || filter.value === '') return true
+        const value = patron[filter.field] ?? ''
         const filterValue = filter.value
 
         switch (filter.operator) {

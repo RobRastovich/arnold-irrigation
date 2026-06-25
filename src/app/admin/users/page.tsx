@@ -73,7 +73,8 @@ export default function UsersPage() {
   const applyFilters = (users: any[], filters: any[]) => {
     return users.filter((user) => {
       return filters.every((filter) => {
-        const value = user[filter.field]
+        if (!filter.field || filter.value === '') return true
+        const value = user[filter.field] ?? ''
         const filterValue = filter.value
 
         switch (filter.operator) {

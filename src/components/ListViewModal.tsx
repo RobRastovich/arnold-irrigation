@@ -53,6 +53,7 @@ export default function ListViewModal({
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!isOpen) return
     if (existingView) {
       setName(existingView.name)
       setSelectedColumns(existingView.columns)
@@ -62,7 +63,8 @@ export default function ListViewModal({
       setSelectedColumns(availableColumns.map((col) => col.id))
       setFilters([])
     }
-  }, [existingView, availableColumns])
+    setError('')
+  }, [isOpen, existingView, availableColumns])
 
   const handleColumnToggle = (columnId: string) => {
     setSelectedColumns((prev) =>

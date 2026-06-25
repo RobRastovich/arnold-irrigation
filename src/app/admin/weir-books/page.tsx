@@ -16,6 +16,8 @@ export default function WeirBooksPage() {
   const availableColumns = [
     { id: 'weirLocation', label: 'Weir Location' },
     { id: 'canal', label: 'Canal' },
+    { id: 'weirNumber', label: 'Weir Number' },
+    { id: 'itemCount', label: 'Item Count' },
     { id: 'createdAt', label: 'Created' },
   ]
 
@@ -59,7 +61,9 @@ export default function WeirBooksPage() {
   const applyFilters = (items: any[], filters: any[]) => {
     return items.filter((item) =>
       filters.every((filter) => {
-        const value = item[filter.field]
+        if (!filter.field || filter.value === '') return true
+        const raw = item[filter.field]
+        const value = raw ?? ''
         const filterValue = filter.value
         switch (filter.operator) {
           case 'equals':

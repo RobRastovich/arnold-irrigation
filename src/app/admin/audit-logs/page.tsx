@@ -99,7 +99,8 @@ export default function AuditLogsPage() {
   const applyFilters = (logs: any[], filters: any[]) => {
     return logs.filter((log) => {
       return filters.every((filter) => {
-        const value = log[filter.field]
+        if (!filter.field || filter.value === '') return true
+        const value = log[filter.field] ?? ''
         const filterValue = filter.value
 
         switch (filter.operator) {

@@ -91,7 +91,8 @@ export default function TurnoutsPage() {
   const applyFilters = (turnouts: any[], filters: any[]) => {
     return turnouts.filter((turnout) => {
       return filters.every((filter) => {
-        const value = turnout[filter.field]
+        if (!filter.field || filter.value === '') return true
+        const value = turnout[filter.field] ?? ''
         const filterValue = filter.value
 
         switch (filter.operator) {

@@ -73,7 +73,8 @@ export default function TicketsPage() {
   const applyFilters = (tickets: any[], filters: any[]) => {
     return tickets.filter((ticket) => {
       return filters.every((filter) => {
-        const value = ticket[filter.field]
+        if (!filter.field || filter.value === '') return true
+        const value = ticket[filter.field] ?? ''
         const filterValue = filter.value
 
         switch (filter.operator) {
