@@ -177,8 +177,8 @@ export default function WeirBooksPage() {
     <div className="min-h-screen bg-gray-100 flex">
       <AdminSidebar />
 
-      <div className="flex-1 flex flex-col">
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0 z-10">
           <h2 className="text-xl font-semibold text-gray-900">Weir Books</h2>
           <div className="flex gap-2">
             <button
@@ -204,7 +204,7 @@ export default function WeirBooksPage() {
           </div>
         </header>
 
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 overflow-y-auto">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             {/* List View Selector & Search */}
             <div className="p-4 border-b border-gray-200 flex gap-4 items-center">
