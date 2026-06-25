@@ -7,20 +7,15 @@ export async function GET(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(request.url)
-  const search = searchParams.get('search') || ''
   const year = searchParams.get('year')
 
   const where: any = {}
-  if (search) {
-    where.OR = [
-      { rateCode: { contains: search, mode: 'insensitive' } },
-    ]
-  }
   if (year) where.year = parseInt(year)
 
   const rates = await prisma.rate.findMany({
     where,
-    orderBy: [{ year: 'desc' }, { rateCode: 'asc' }],
+    include: { items: { include: { rateType: true } } },
+    orderBy: { year: 'desc' },
   })
 
   return NextResponse.json(rates)
@@ -32,33 +27,15 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const {
-      rateCode, year, ownerAccount, administrativeFee, capitalImprovement,
-      construction, debtRetirement, interestCharge, maintenanceFee,
-      operations, modernizationFund, releaseOfLienFee, taxLotFee, waterProtectionFund,
-    } = body
+    const { year } = body
 
-    if (!rateCode || !year) {
-      return NextResponse.json({ error: 'rateCode and year are required' }, { status: 400 })
+    if (!year) {
+      return NextResponse.json({ error: 'year is required' }, { status: 400 })
     }
 
     const rate = await prisma.rate.create({
-      data: {
-        rateCode,
-        year: parseInt(year),
-        ownerAccount: ownerAccount ?? 0,
-        administrativeFee: administrativeFee ?? 0,
-        capitalImprovement: capitalImprovement ?? 0,
-        construction: construction ?? 0,
-        debtRetirement: debtRetirement ?? 0,
-        interestCharge: interestCharge ?? 0,
-        maintenanceFee: maintenanceFee ?? 0,
-        operations: operations ?? 0,
-        modernizationFund: modernizationFund ?? 0,
-        releaseOfLienFee: releaseOfLienFee ?? 0,
-        taxLotFee: taxLotFee ?? 0,
-        waterProtectionFund: waterProtectionFund ?? 0,
-      },
+      data: { year: parseInt(year) },
+      include: { items: { include: { rateType: true } } },
     })
 
     return NextResponse.json(rate, { status: 201 })

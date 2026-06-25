@@ -296,28 +296,52 @@ model TransactionItem {
   @@index([accountNumber])
 }
 
+enum ChargeType {
+  TAXLOT
+  ACRE_OF_WATER
+  PER_SEASON
+}
+
+model RateType {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  rateItems RateItem[]
+
+  @@map("rate_types")
+}
+
 model Rate {
-  id                    String   @id @default(cuid())
-  rateCode              String   @db.VarChar(25)
-  year                  Int
-  ownerAccount          Decimal  @db.Decimal(10, 2)
-  administrativeFee     Decimal  @db.Decimal(10, 2)
-  capitalImprovement    Decimal  @db.Decimal(10, 2)
-  construction          Decimal  @db.Decimal(10, 2)
-  debtRetirement        Decimal  @db.Decimal(10, 2)
-  interestCharge        Decimal  @db.Decimal(10, 2)
-  maintenanceFee        Decimal  @db.Decimal(10, 2)
-  operations            Decimal  @db.Decimal(10, 2)
-  modernizationFund     Decimal  @db.Decimal(10, 2)
-  releaseOfLienFee      Decimal  @db.Decimal(10, 2)
-  taxLotFee             Decimal  @db.Decimal(10, 2)
-  waterProtectionFund   Decimal  @db.Decimal(10, 2)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id        String     @id @default(cuid())
+  year      Int
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  items     RateItem[]
 
   @@map("rates")
   @@index([year])
-  @@index([rateCode])
+}
+
+model RateItem {
+  id           String     @id @default(cuid())
+  rateId       String
+  rateTypeId   String
+  rateCode     String     @db.VarChar(10)
+  chargeType   ChargeType
+  assessment   Decimal    @db.Decimal(10, 2)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  rate         Rate       @relation(fields: [rateId], references: [id], onDelete: Cascade)
+  rateType     RateType   @relation(fields: [rateTypeId], references: [id])
+
+  @@map("rate_items")
+  @@index([rateId])
+  @@index([rateTypeId])
 }
 
 model SavedListView {
