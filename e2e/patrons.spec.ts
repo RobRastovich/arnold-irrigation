@@ -11,7 +11,7 @@ test.describe('Patron CRUD Operations', () => {
     await page.click('button[type="submit"]')
 
     // Wait for navigation and then go to admin dashboard
-    await page.waitForURL('/dashboard')
+    await page.waitForURL(/\/dashboard/)
     await page.goto('/admin/dashboard')
     await page.waitForLoadState('networkidle')
   })

@@ -10,8 +10,8 @@ test.describe('Turnout CRUD Operations', () => {
     await page.fill('input[name="password"]', 'Arnold-06172026')
     await page.click('button[type="submit"]')
 
-    // Wait for navigation and then go to admin dashboard
-    await page.waitForURL('/dashboard')
+    // Login redirects to /dashboard; navigate explicitly to admin area
+    await page.waitForURL(/\/dashboard/)
     await page.goto('/admin/dashboard')
     await page.waitForLoadState('networkidle')
   })

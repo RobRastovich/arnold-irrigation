@@ -10,8 +10,8 @@ test.describe('Ticket CRUD Operations', () => {
     await page.fill('input[name="password"]', 'Arnold-06172026')
     await page.click('button[type="submit"]')
 
-    // Wait for navigation and then go to admin dashboard
-    await page.waitForURL('/dashboard')
+    // Login redirects to /dashboard; navigate explicitly to admin area
+    await page.waitForURL(/\/dashboard/)
     await page.goto('/admin/dashboard')
     await page.waitForLoadState('networkidle')
   })
@@ -24,12 +24,6 @@ test.describe('Ticket CRUD Operations', () => {
     // Wait for data to load with network idle
     await page.waitForLoadState('networkidle')
 
-    // Wait for table rows to appear
-    await page.waitForSelector('tbody tr', { timeout: 10000 })
-
-    // Get initial count of tickets
-    const initialCount = await page.locator('tbody tr').count()
-
     // Click "New Ticket" button
     await page.click('text=New Ticket')
     await page.waitForURL('/admin/tickets/new')
@@ -41,19 +35,13 @@ test.describe('Ticket CRUD Operations', () => {
     await page.selectOption('select[name="priority"]', 'MEDIUM')
     await page.fill('textarea[name="description"]', 'This is a test ticket description')
 
-    // Submit form
+    // Submit form - app redirects to ticket detail, not list
     await page.click('button[type="submit"]')
-
-    // Wait for navigation back to tickets list with network idle
-    await page.waitForURL('/admin/tickets', { timeout: 30000 })
+    await page.waitForURL(/\/admin\/tickets\/.+/, { timeout: 30000 })
     await page.waitForLoadState('networkidle')
 
-    // Wait for table rows to appear
-    await page.waitForSelector('tbody tr', { timeout: 10000 })
-
-    // Verify ticket was created by checking count increased
-    const finalCount = await page.locator('tbody tr').count()
-    expect(finalCount).toBe(initialCount + 1)
+    // Verify the detail page shows the ticket we just created
+    await expect(page.locator(`text=${title}`)).toBeVisible()
   })
 
   test('should read ticket details', async ({ page }) => {
