@@ -10,6 +10,7 @@ const menuItems = [
   { name: 'Users', icon: '👤', href: '/admin/users' },
   { name: 'Tickets', icon: '🎫', href: '/admin/tickets' },
   { name: 'Weir Books', icon: '📖', href: '/admin/weir-books' },
+  { name: 'Rates', icon: '💲', href: '/admin/rates' },
   { name: 'Audit Logs', icon: '📋', href: '/admin/audit-logs' },
 ]
 

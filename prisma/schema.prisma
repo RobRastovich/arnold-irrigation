@@ -296,6 +296,30 @@ model TransactionItem {
   @@index([accountNumber])
 }
 
+model Rate {
+  id                    String   @id @default(cuid())
+  rateCode              String   @db.VarChar(25)
+  year                  Int
+  ownerAccount          Decimal  @db.Decimal(10, 2)
+  administrativeFee     Decimal  @db.Decimal(10, 2)
+  capitalImprovement    Decimal  @db.Decimal(10, 2)
+  construction          Decimal  @db.Decimal(10, 2)
+  debtRetirement        Decimal  @db.Decimal(10, 2)
+  interestCharge        Decimal  @db.Decimal(10, 2)
+  maintenanceFee        Decimal  @db.Decimal(10, 2)
+  operations            Decimal  @db.Decimal(10, 2)
+  modernizationFund     Decimal  @db.Decimal(10, 2)
+  releaseOfLienFee      Decimal  @db.Decimal(10, 2)
+  taxLotFee             Decimal  @db.Decimal(10, 2)
+  waterProtectionFund   Decimal  @db.Decimal(10, 2)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("rates")
+  @@index([year])
+  @@index([rateCode])
+}
+
 model SavedListView {
   id          String   @id @default(cuid())
   name        String
