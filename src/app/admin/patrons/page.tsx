@@ -21,6 +21,10 @@ export default function PatronsPage() {
     { id: 'legalName', label: 'Legal Name' },
     { id: 'primaryEmail', label: 'Email' },
     { id: 'primaryPhone', label: 'Phone' },
+    { id: 'serviceStreet', label: 'Street' },
+    { id: 'serviceCity', label: 'City' },
+    { id: 'serviceState', label: 'State' },
+    { id: 'serviceZip', label: 'Zip' },
     { id: 'totalWaterRightAcres', label: 'Water Right Acres' },
     { id: 'assessedAcres', label: 'Assessed Acres' },
     { id: 'isActive', label: 'Status' },
@@ -75,7 +79,13 @@ export default function PatronsPage() {
     return patrons.filter((patron) => {
       return filters.every((filter) => {
         if (!filter.field || filter.value === '') return true
-        const value = patron[filter.field] ?? ''
+        // 'name' is a virtual field combining firstName + lastName
+        const raw = filter.field === 'name'
+          ? `${patron.firstName ?? ''} ${patron.lastName ?? ''}`.trim()
+          : filter.field === 'isActive'
+          ? (patron.isActive ? 'active' : 'inactive')
+          : patron[filter.field] ?? ''
+        const value = raw
         const filterValue = filter.value
 
         switch (filter.operator) {
@@ -112,12 +122,16 @@ export default function PatronsPage() {
 
     // Apply search term
     if (searchTerm) {
+      const term = searchTerm.toLowerCase()
       result = result.filter(
         (patron) =>
-          patron.accountNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          patron.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          patron.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          patron.primaryEmail.toLowerCase().includes(searchTerm.toLowerCase())
+          (patron.accountNumber ?? '').toLowerCase().includes(term) ||
+          (patron.firstName ?? '').toLowerCase().includes(term) ||
+          (patron.lastName ?? '').toLowerCase().includes(term) ||
+          (patron.primaryEmail ?? '').toLowerCase().includes(term) ||
+          (patron.serviceStreet ?? '').toLowerCase().includes(term) ||
+          (patron.serviceCity ?? '').toLowerCase().includes(term) ||
+          (patron.serviceZip ?? '').toLowerCase().includes(term)
       )
     }
 
@@ -199,6 +213,14 @@ export default function PatronsPage() {
         return patron.primaryEmail
       case 'primaryPhone':
         return patron.primaryPhone
+      case 'serviceStreet':
+        return patron.serviceStreet || '-'
+      case 'serviceCity':
+        return patron.serviceCity || '-'
+      case 'serviceState':
+        return patron.serviceState || '-'
+      case 'serviceZip':
+        return patron.serviceZip || '-'
       case 'totalWaterRightAcres':
         return patron.totalWaterRightAcres
       case 'assessedAcres':
