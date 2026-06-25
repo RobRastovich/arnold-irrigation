@@ -12,18 +12,18 @@ const STATUS_COLORS: Record<string, string> = {
   VOID: 'bg-red-100 text-red-600',
 }
 
-function InvoicesContent() {
+function AssessmentsContent() {
   const searchParams = useSearchParams()
   const rateIdFilter = searchParams.get('rateId') || ''
 
-  const [invoices, setInvoices] = useState<any[]>([])
+  const [assessments, setAssessments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
 
-  useEffect(() => { fetchInvoices() }, [rateIdFilter, statusFilter])
+  useEffect(() => { fetchAssessments() }, [rateIdFilter, statusFilter])
 
-  const fetchInvoices = async () => {
+  const fetchAssessments = async () => {
     setLoading(true)
     try {
       const token = localStorage.getItem('token')
@@ -33,7 +33,7 @@ function InvoicesContent() {
       const res = await fetch(`/api/admin/invoices?${qs}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      if (res.ok) setInvoices(await res.json())
+      if (res.ok) setAssessments(await res.json())
     } catch (err) {
       console.error(err)
     } finally {
@@ -41,7 +41,7 @@ function InvoicesContent() {
     }
   }
 
-  const filtered = invoices.filter((inv) => {
+  const filtered = assessments.filter((inv) => {
     if (!search) return true
     const s = search.toLowerCase()
     return (
@@ -59,9 +59,9 @@ function InvoicesContent() {
       <main className="flex-1 p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Assessments</h1>
             <p className="text-gray-500 text-sm mt-1">
-              {filtered.length} invoice{filtered.length !== 1 ? 's' : ''}
+              {filtered.length} assessment{filtered.length !== 1 ? 's' : ''}
               {filtered.length > 0 && ` · Total: $${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
             </p>
           </div>
@@ -69,14 +69,14 @@ function InvoicesContent() {
             <Link href="/admin/invoices" className="sf-btn sf-btn-secondary text-sm">
               Clear Filter
             </Link>
-          )}
+          )}  
         </div>
 
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4 flex gap-4 flex-wrap">
           <input
             type="text"
-            placeholder="Search invoice #, account, name…"
+            placeholder="Search assessment #, account, name…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="sf-input w-64"
@@ -102,13 +102,13 @@ function InvoicesContent() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center p-16 text-gray-500">
-              {search || statusFilter ? 'No invoices match your filters.' : 'No invoices yet. Generate assessments from a Rate Schedule.'}
+              {search || statusFilter ? 'No assessments match your filters.' : 'No assessments yet. Generate assessments from a Rate Schedule.'}
             </div>
           ) : (
             <table className="sf-table w-full">
               <thead>
                 <tr>
-                  <th className="text-left">Invoice #</th>
+                  <th className="text-left">Assessment #</th>
                   <th className="text-left">Account</th>
                   <th className="text-left">Name</th>
                   <th className="text-left">Year</th>
@@ -123,7 +123,7 @@ function InvoicesContent() {
                     <td className="font-mono text-sm font-medium">
                       <Link href={`/admin/invoices/${inv.id}`} className="text-blue-600 hover:text-blue-900">
                         {inv.invoiceNumber}
-                      </Link>
+                      </Link>  
                     </td>
                     <td className="text-sm">{inv.accountNumber}</td>
                     <td>{inv.firstName} {inv.lastName}</td>
@@ -150,10 +150,10 @@ function InvoicesContent() {
   )
 }
 
-export default function InvoicesPage() {
+export default function AssessmentsPage() {
   return (
     <Suspense>
-      <InvoicesContent />
+      <AssessmentsContent />
     </Suspense>
   )
 }

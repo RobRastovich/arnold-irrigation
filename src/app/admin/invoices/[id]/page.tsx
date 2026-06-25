@@ -17,10 +17,10 @@ const CHARGE_TYPE_LABELS: Record<string, string> = {
   PER_SEASON: 'Per Season',
 }
 
-export default function InvoiceDetailPage() {
+export default function AssessmentDetailPage() {
   const router = useRouter()
   const params = useParams()
-  const [invoice, setInvoice] = useState<any>(null)
+  const [assessment, setAssessment] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -28,17 +28,17 @@ export default function InvoiceDetailPage() {
   const [editNotes, setEditNotes] = useState('')
   const [editDueDate, setEditDueDate] = useState('')
 
-  useEffect(() => { fetchInvoice() }, [params.id])
+  useEffect(() => { fetchAssessment() }, [params.id])
 
-  const fetchInvoice = async () => {
+  const fetchAssessment = async () => {
     try {
       const token = localStorage.getItem('token')
       const res = await fetch(`/api/admin/invoices/${params.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      if (!res.ok) throw new Error('Invoice not found')
+      if (!res.ok) throw new Error('Assessment not found')
       const data = await res.json()
-      setInvoice(data)
+      setAssessment(data)
       setEditStatus(data.status)
       setEditNotes(data.notes || '')
       setEditDueDate(data.dueDate ? data.dueDate.split('T')[0] : '')
@@ -63,7 +63,7 @@ export default function InvoiceDetailPage() {
         }),
       })
       if (!res.ok) throw new Error('Failed to update')
-      setInvoice(await res.json())
+      setAssessment(await res.json())
     } catch (err: any) {
       alert(err.message)
     } finally {
@@ -84,10 +84,10 @@ export default function InvoiceDetailPage() {
     </div>
   )
 
-  const billToStreet = invoice.mailingStreet || invoice.serviceStreet
-  const billToCity = invoice.mailingCity || invoice.serviceCity
-  const billToState = invoice.mailingState || invoice.serviceState
-  const billToZip = invoice.mailingZip || invoice.serviceZip
+  const billToStreet = assessment.mailingStreet || assessment.serviceStreet
+  const billToCity = assessment.mailingCity || assessment.serviceCity
+  const billToState = assessment.mailingState || assessment.serviceState
+  const billToZip = assessment.mailingZip || assessment.serviceZip
 
   return (
     <div className="min-h-screen bg-gray-100 flex print:bg-white">
@@ -101,11 +101,11 @@ export default function InvoiceDetailPage() {
           <div className="print:hidden flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button onClick={() => router.push('/admin/invoices')} className="text-gray-500 hover:text-gray-700 text-sm">
-                ← Invoices
+                ← Assessments
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">{invoice.invoiceNumber}</h1>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[invoice.status]}`}>
-                {invoice.status}
+              <h1 className="text-2xl font-bold text-gray-900">{assessment.invoiceNumber}</h1>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[assessment.status]}`}>
+                {assessment.status}
               </span>
             </div>
             <div className="flex gap-3">
@@ -115,7 +115,7 @@ export default function InvoiceDetailPage() {
 
           {/* Edit panel (screen only) */}
           <div className="print:hidden bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <h2 className="text-base font-semibold text-gray-800 mb-4">Invoice Settings</h2>
+            <h2 className="text-base font-semibold text-gray-800 mb-4">Assessment Settings</h2>
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -139,30 +139,30 @@ export default function InvoiceDetailPage() {
             </div>
           </div>
 
-          {/* Printable Invoice */}
+          {/* Printable Assessment */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 print:shadow-none print:border-0 print:rounded-none">
 
-            {/* Invoice header */}
+            {/* Assessment header */}
             <div className="flex justify-between items-start mb-8">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-1">INVOICE</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-1">ASSESSMENT</h2>
                 <p className="text-gray-500 text-sm">Arnold Irrigation District</p>
               </div>
               <div className="text-right">
-                <p className="text-xl font-bold text-gray-900">{invoice.invoiceNumber}</p>
-                <p className="text-sm text-gray-500">Date: {new Date(invoice.invoiceDate).toLocaleDateString()}</p>
-                {invoice.dueDate && (
-                  <p className="text-sm text-gray-500">Due: {new Date(invoice.dueDate).toLocaleDateString()}</p>
+                <p className="text-xl font-bold text-gray-900">{assessment.invoiceNumber}</p>
+                <p className="text-sm text-gray-500">Date: {new Date(assessment.invoiceDate).toLocaleDateString()}</p>
+                {assessment.dueDate && (
+                  <p className="text-sm text-gray-500">Due: {new Date(assessment.dueDate).toLocaleDateString()}</p>
                 )}
-                <p className="text-sm text-gray-500">Rate Year: {invoice.rate?.year}</p>
+                <p className="text-sm text-gray-500">Rate Year: {assessment.rate?.year}</p>
               </div>
             </div>
 
             {/* Bill to */}
             <div className="mb-8 p-4 bg-gray-50 rounded-lg print:bg-white print:border print:border-gray-200">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Bill To</p>
-              <p className="font-semibold text-gray-900">{invoice.firstName} {invoice.lastName}</p>
-              <p className="text-sm text-gray-600">Account: {invoice.accountNumber}</p>
+              <p className="font-semibold text-gray-900">{assessment.firstName} {assessment.lastName}</p>
+              <p className="text-sm text-gray-600">Account: {assessment.accountNumber}</p>
               {billToStreet && <p className="text-sm text-gray-600 mt-1">{billToStreet}</p>}
               {billToCity && <p className="text-sm text-gray-600">{billToCity}, {billToState} {billToZip}</p>}
             </div>
@@ -180,7 +180,7 @@ export default function InvoiceDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {invoice.lineItems?.map((li: any) => (
+                {assessment.lineItems?.map((li: any) => (
                   <tr key={li.id} className="border-b border-gray-100">
                     <td className="py-2 font-mono text-sm">{li.rateCode}</td>
                     <td className="py-2 text-sm">{li.description}</td>
@@ -195,17 +195,17 @@ export default function InvoiceDetailPage() {
                 <tr className="border-t-2 border-gray-300">
                   <td colSpan={5} className="pt-3 text-right font-bold text-gray-900 pr-4">Total Due</td>
                   <td className="pt-3 text-right font-bold text-lg text-gray-900 font-mono">
-                    ${Number(invoice.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    ${Number(assessment.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </td>
                 </tr>
               </tfoot>
             </table>
 
             {/* Notes */}
-            {invoice.notes && (
+            {assessment.notes && (
               <div className="border-t border-gray-100 pt-4">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Notes</p>
-                <p className="text-sm text-gray-700">{invoice.notes}</p>
+                <p className="text-sm text-gray-700">{assessment.notes}</p>
               </div>
             )}
           </div>

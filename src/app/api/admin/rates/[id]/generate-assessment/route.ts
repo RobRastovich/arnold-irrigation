@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { authenticateRequest } from '@/lib/api-auth'
-import { Decimal } from '@prisma/client/runtime/library'
 
 async function nextInvoiceNumber(): Promise<string> {
   const latest = await prisma.invoice.findFirst({
     orderBy: { invoiceNumber: 'desc' },
     select: { invoiceNumber: true },
   })
-  if (!latest) return 'INV-000001'
-  const num = parseInt(latest.invoiceNumber.replace('INV-', ''), 10)
-  return `INV-${String(num + 1).padStart(6, '0')}`
+  if (!latest) return 'ASM-000001'
+  const num = parseInt(latest.invoiceNumber.replace('ASM-', ''), 10)
+  return `ASM-${String(num + 1).padStart(6, '0')}`
 }
 
 export async function POST(
@@ -34,11 +33,11 @@ export async function POST(
     return NextResponse.json({ error: 'Rate has no items — add rate items before generating assessments' }, { status: 400 })
   }
 
-  // Check if invoices already exist for this rate
+  // Check if assessments already exist for this rate
   const existing = await prisma.invoice.count({ where: { rateId } })
   if (existing > 0) {
     return NextResponse.json({
-      error: `Assessments already generated for this rate (${existing} invoices exist). Void existing invoices before regenerating.`,
+      error: `Assessments already generated for this rate (${existing} assessments exist). Void existing assessments before regenerating.`,
     }, { status: 409 })
   }
 
@@ -64,10 +63,10 @@ export async function POST(
   for (const patron of patrons) {
     // Compute patron-level quantities
     const distinctTaxLots = new Set(
-      patron.turnouts.map((t) => t.taxLotNumber).filter(Boolean)
+      patron.turnouts.map((t: { taxLotNumber: string; acresOwned: number }) => t.taxLotNumber).filter(Boolean)
     ).size
     const totalAcresOwned = patron.turnouts.reduce(
-      (sum, t) => sum + (t.acresOwned ?? 0), 0
+      (sum: number, t: { taxLotNumber: string; acresOwned: number }) => sum + (t.acresOwned ?? 0), 0
     )
 
     // Build line items
@@ -147,7 +146,7 @@ export async function POST(
 
   return NextResponse.json({
     success: true,
-    invoicesCreated: created.length,
-    message: `Generated ${created.length} invoice${created.length !== 1 ? 's' : ''} for rate year ${rate.year}`,
+    assessmentsCreated: created.length,
+    message: `Generated ${created.length} assessment${created.length !== 1 ? 's' : ''} for rate year ${rate.year}`,
   }, { status: 201 })
 }

@@ -11,7 +11,7 @@ const menuItems = [
   { name: 'Tickets', icon: '🎫', href: '/admin/tickets' },
   { name: 'Weir Books', icon: '📖', href: '/admin/weir-books' },
   { name: 'Rates', icon: '💲', href: '/admin/rates' },
-  { name: 'Invoices', icon: '🧾', href: '/admin/invoices' },
+  { name: 'Assessments', icon: '🧾', href: '/admin/invoices' },
   { name: 'Audit Logs', icon: '📋', href: '/admin/audit-logs' },
 ]
 

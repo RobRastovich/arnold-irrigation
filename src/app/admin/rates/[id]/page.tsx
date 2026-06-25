@@ -25,6 +25,7 @@ export default function RateDetailPage() {
   const [generating, setGenerating] = useState(false)
   const [genResult, setGenResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
+
   useEffect(() => { fetchRate() }, [params.id])
 
   const fetchRate = async () => {
@@ -63,7 +64,7 @@ export default function RateDetailPage() {
   }
 
   const handleGenerateAssessment = async () => {
-    if (!confirm(`Generate assessment invoices for all active patrons using rate year ${rate?.year}? This cannot be undone.`)) return
+    if (!confirm(`Generate assessments for all active patrons using rate year ${rate?.year}? This cannot be undone.`)) return
     setGenerating(true)
     setGenResult(null)
     try {
@@ -144,7 +145,7 @@ export default function RateDetailPage() {
                 {generating ? 'Generating…' : '⚡ Generate Assessment'}
               </button>
               <button onClick={() => router.push('/admin/invoices?rateId=' + params.id)} className="sf-btn sf-btn-secondary text-sm">
-                View Invoices
+                View Assessments
               </button>
               <button onClick={handleDeleteRate} disabled={deleting} className="sf-btn sf-btn-danger text-sm">
                 {deleting ? 'Deleting…' : 'Delete Schedule'}
@@ -165,7 +166,7 @@ export default function RateDetailPage() {
                   onClick={() => router.push('/admin/invoices?rateId=' + params.id)}
                   className="ml-4 underline"
                 >
-                  View Invoices →
+                  View Assessments →
                 </button>
               )}
             </div>
