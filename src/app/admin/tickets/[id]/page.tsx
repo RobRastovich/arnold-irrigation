@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
+import WindowShade from '@/components/WindowShade'
+import AddTicketNoteModal from '@/components/AddTicketNoteModal'
 import { formatDateTimeInTimezone } from '@/lib/date-utils'
 
 export default function TicketDetailPage() {
@@ -13,6 +15,9 @@ export default function TicketDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [userTimezone, setUserTimezone] = useState('America/Los_Angeles')
+  const [showNoteModal, setShowNoteModal] = useState(false)
+  const [selectedNote, setSelectedNote] = useState<any>(null)
+  const [showNoteDetailModal, setShowNoteDetailModal] = useState(false)
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -25,6 +30,10 @@ export default function TicketDetailPage() {
   useEffect(() => {
     fetchTicket()
   }, [params.id])
+
+  const handleNoteAdded = () => {
+    fetchTicket()
+  }
 
   const fetchTicket = async () => {
     try {
@@ -200,9 +209,122 @@ export default function TicketDetailPage() {
                 </div>
               </div>
             </div>
+
+            {/* Notes - Window Shade */}
+            <WindowShade
+              title={`Notes (${ticket.notes?.length || 0})`}
+              defaultOpen={false}
+              actionButton={
+                <button
+                  className="sf-btn sf-btn-secondary text-xs"
+                  onClick={() => setShowNoteModal(true)}
+                >
+                  New Note
+                </button>
+              }
+            >
+              {(ticket.notes?.length || 0) === 0 ? (
+                <p className="sf-field-value text-gray-500 text-center py-2">No notes yet</p>
+              ) : (
+                <table className="sf-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Created By</th>
+                      <th>Note</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ticket.notes.map((note: any) => (
+                      <tr key={note.id}>
+                        <td className="text-xs">
+                          {new Date(note.timeReceived).toLocaleString()}
+                        </td>
+                        <td className="text-xs">
+                          {note.creator ? (
+                            `${note.creator.firstName} ${note.creator.lastName}`
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td>
+                          {note.notes.length > 100
+                            ? `${note.notes.substring(0, 100)}...`
+                            : note.notes}
+                        </td>
+                        <td>
+                          <button
+                            onClick={() => {
+                              setSelectedNote(note)
+                              setShowNoteDetailModal(true)
+                            }}
+                            className="text-blue-600 hover:text-blue-900 text-xs"
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </WindowShade>
           </div>
         </main>
       </div>
+
+      <AddTicketNoteModal
+        isOpen={showNoteModal}
+        onClose={() => setShowNoteModal(false)}
+        ticketId={params.id as string}
+        onNoteAdded={handleNoteAdded}
+      />
+      {showNoteDetailModal && selectedNote && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">Note Details</h3>
+                <button
+                  onClick={() => setShowNoteDetailModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Date</p>
+                  <p className="text-sm text-gray-900">
+                    {new Date(selectedNote.timeReceived).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Created By</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedNote.creator
+                      ? `${selectedNote.creator.firstName} ${selectedNote.creator.lastName}`
+                      : '-'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Note</p>
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedNote.notes}</p>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowNoteDetailModal(false)}
+                  className="sf-btn sf-btn-secondary"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

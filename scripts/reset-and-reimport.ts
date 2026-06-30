@@ -71,7 +71,7 @@ async function deleteAll() {
 async function importPatrons() {
   console.log('\nImporting patrons from User.csv…')
   const raw  = fs.readFileSync(PATRON_CSV, 'utf-8')
-  const rows = parse(raw, { columns: true, skip_empty_lines: true, relax_column_count: true, trim: true })
+  const rows = parse(raw, { columns: true, skip_empty_lines: true, relax_column_count: true, trim: true }) as any[]
   console.log(`  Parsed ${rows.length} rows`)
 
   let created = 0, skipped = 0, errors = 0
@@ -139,7 +139,7 @@ async function importPatrons() {
 async function importTurnouts() {
   console.log('\nImporting turnouts from Turnout.csv…')
   const raw  = fs.readFileSync(TURNOUT_CSV, 'utf-8')
-  const rows = parse(raw, { columns: true, skip_empty_lines: true, relax_column_count: true, trim: true })
+  const rows = parse(raw, { columns: true, skip_empty_lines: true, relax_column_count: true, trim: true }) as any[]
   console.log(`  Parsed ${rows.length} rows`)
 
   // Build patron lookup
@@ -186,7 +186,7 @@ async function importTurnouts() {
 async function importWeirBooks() {
   console.log('\nImporting weir books from shawnsweirreport.csv…')
   const raw  = fs.readFileSync(WEIR_CSV, 'utf-8')
-  const rows = parse(raw, { columns: true, skip_empty_lines: true, relax_column_count: true, trim: true })
+  const rows = parse(raw, { columns: true, skip_empty_lines: true, relax_column_count: true, trim: true }) as any[]
   console.log(`  Parsed ${rows.length} rows`)
 
   const patrons = await prisma.patron.findMany({ select: { accountNumber: true } })
@@ -242,8 +242,8 @@ async function importWeirBooks() {
         data: {
           weirBookId,
           accountNumber,
-          acres:        parseFloat(row.Acres    || '0') || null,
-          privateAcres: parseFloat(row.PvtAcres || '0') || null,
+          acres:        parseFloat(row.Acres    || '0') || 0,
+          privateAcres: parseFloat(row.PvtAcres || '0') || 0,
           description:  (row.Location || '').trim() || null,
           notes:        (row.Weirmemo || '').trim() || null,
         },

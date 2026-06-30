@@ -173,6 +173,7 @@ model Note {
   id             String   @id @default(cuid())
   patronId       String?
   turnoutId      String?
+  ticketId       String?
   createdBy      String?
   timeReceived   DateTime @default(now())
   notes          String   @db.Text
@@ -181,10 +182,12 @@ model Note {
 
   patron         Patron?  @relation(fields: [patronId], references: [id], onDelete: Cascade)
   turnout        Turnout? @relation(fields: [turnoutId], references: [id], onDelete: Cascade)
+  ticket         Ticket?  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@map("notes")
   @@index([patronId])
   @@index([turnoutId])
+  @@index([ticketId])
 }
 
 model AuditLog {
@@ -214,6 +217,8 @@ model Ticket {
   createdBy   String       // User ID who created the ticket
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+
+  notes       Note[]
 
   @@map("tickets")
   @@index([status])

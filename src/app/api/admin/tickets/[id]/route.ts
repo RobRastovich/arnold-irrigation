@@ -20,6 +20,11 @@ export async function GET(
   try {
     const ticket = await prisma.ticket.findUnique({
       where: { id: params.id },
+      include: {
+        notes: {
+          orderBy: { timeReceived: 'desc' },
+        },
+      },
     })
 
     if (!ticket) {
@@ -30,6 +35,9 @@ export async function GET(
     const userIds = new Set<string>()
     if (ticket.assignedTo) userIds.add(ticket.assignedTo)
     userIds.add(ticket.createdBy)
+    ticket.notes.forEach((note: any) => {
+      if (note.createdBy) userIds.add(note.createdBy)
+    })
 
     const users = await prisma.user.findMany({
       where: { id: { in: Array.from(userIds) } },
@@ -47,6 +55,10 @@ export async function GET(
       ...ticket,
       assignedToUser: ticket.assignedTo ? userMap.get(ticket.assignedTo) : null,
       createdByUser: userMap.get(ticket.createdBy),
+      notes: ticket.notes.map((note: any) => ({
+        ...note,
+        creator: note.createdBy ? userMap.get(note.createdBy) : null,
+      })),
     }
 
     return NextResponse.json(ticketWithUsers)
