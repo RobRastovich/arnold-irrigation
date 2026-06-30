@@ -51,6 +51,27 @@ export async function PUT(
 
   try {
     const body = await request.json()
+    if (body.primaryEmail === '') {
+      body.primaryEmail = undefined
+    }
+
+    const cleanFirstName = body.firstName?.trim() || undefined
+    const cleanLastName = body.lastName?.trim() || undefined
+    const cleanLegalName = body.legalName?.trim() || undefined
+
+    if (cleanFirstName !== undefined) body.firstName = cleanFirstName
+    if (cleanLastName !== undefined) body.lastName = cleanLastName
+    if (cleanLegalName !== undefined) body.legalName = cleanLegalName
+
+    const hasLegalName = !!cleanLegalName
+    const hasFirstLast = !!cleanFirstName && !!cleanLastName
+    if (!hasLegalName && !hasFirstLast) {
+      return NextResponse.json(
+        { error: 'Please provide either a Legal Name or both First Name and Last Name.' },
+        { status: 400 }
+      )
+    }
+
     setCurrentUserId(user.userId, userName)
     const patron = await prisma.patron.update({
       where: { id: params.id },

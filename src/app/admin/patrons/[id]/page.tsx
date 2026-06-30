@@ -177,7 +177,11 @@ export default function PatronDetailPage() {
                 </div>
                 <div>
                   <p className="sf-field-label">Name</p>
-                  <p className="sf-field-value">{patron.firstName} {patron.lastName}</p>
+                  <p className="sf-field-value">
+                    {patron.firstName || patron.lastName
+                      ? `${patron.firstName || ''} ${patron.lastName || ''}`.trim()
+                      : patron.legalName || 'N/A'}
+                  </p>
                 </div>
                 <div>
                   <p className="sf-field-label">Status</p>
@@ -193,7 +197,7 @@ export default function PatronDetailPage() {
                 </div>
                 <div>
                   <p className="sf-field-label">Primary Email</p>
-                  <p className="sf-field-value">{patron.primaryEmail}</p>
+                  <p className="sf-field-value">{patron.primaryEmail || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="sf-field-label">Primary Phone</p>

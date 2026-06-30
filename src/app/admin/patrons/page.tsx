@@ -204,13 +204,15 @@ export default function PatronsPage() {
             href={`/admin/patrons/${patron.id}`}
             className="text-blue-600 hover:text-blue-900"
           >
-            {patron.firstName} {patron.lastName}
+            {patron.firstName || patron.lastName
+              ? `${patron.firstName || ''} ${patron.lastName || ''}`.trim()
+              : patron.legalName || '-'}
           </Link>
         )
       case 'legalName':
         return patron.legalName || '-'
       case 'primaryEmail':
-        return patron.primaryEmail
+        return patron.primaryEmail || '-'
       case 'primaryPhone':
         return patron.primaryPhone
       case 'serviceStreet':

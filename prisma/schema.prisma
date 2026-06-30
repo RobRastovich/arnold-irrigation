@@ -52,8 +52,8 @@ model User {
 model Patron {
   id                    String   @id @default(cuid())
   accountNumber         String   @unique
-  firstName             String
-  lastName              String
+  firstName             String?
+  lastName              String?
   legalName             String?
   serviceStreet         String
   serviceCity           String
@@ -65,7 +65,7 @@ model Patron {
   mailingState          String?
   mailingZip            String?
   mailingCountry        String?
-  primaryEmail          String
+  primaryEmail          String?
   primaryPhone          String
   totalWaterRightAcres  Float
   assessedAcres         Float

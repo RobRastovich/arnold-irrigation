@@ -308,7 +308,9 @@ export default function WeirBooksPage() {
                                       href={`/admin/patrons/${item.patron.id}`}
                                       className="text-blue-600 hover:text-blue-900 text-xs"
                                     >
-                                      {item.patron.firstName} {item.patron.lastName}
+                                      {(item.patron.firstName || item.patron.lastName)
+                                        ? `${item.patron.firstName || ''} ${item.patron.lastName || ''}`.trim()
+                                        : item.patron.legalName || item.accountNumber}
                                       <span className="text-gray-400 ml-1">({item.accountNumber})</span>
                                     </Link>
                                   ) : (

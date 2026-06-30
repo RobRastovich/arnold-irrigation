@@ -80,9 +80,9 @@ async function importPatrons() {
     const accountNumber = String(row.Acctnbr || '').trim()
     if (!accountNumber) { skipped++; continue }
 
-    const firstName  = (row.fname  || '').trim() || 'Unknown'
-    const lastName   = (row.lname  || '').trim() || (row.fname ? '' : 'Unknown')
-    const legalName  = buildLegalName(row)
+    const firstName  = (row.fname  || '').trim() || undefined
+    const lastName   = (row.lname  || '').trim() || undefined
+    const legalName  = buildLegalName(row) || undefined
     const street     = (row.street1 || '').trim()
     const city       = (row.city    || 'Bend').trim()
     const state      = (row.state   || 'OR').trim()

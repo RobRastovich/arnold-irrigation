@@ -73,14 +73,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Account number already exists' }, { status: 409 })
     }
 
+    const cleanFirstName = firstName?.trim() || undefined
+    const cleanLastName = lastName?.trim() || undefined
+    const cleanLegalName = legalName?.trim() || undefined
+
+    if (!cleanLegalName && (!cleanFirstName || !cleanLastName)) {
+      return NextResponse.json(
+        { error: 'Please provide either a Legal Name or both First Name and Last Name.' },
+        { status: 400 }
+      )
+    }
+
     setCurrentUserId(user.userId, userName)
 
     const patron = await prisma.patron.create({
       data: {
         accountNumber,
-        firstName,
-        lastName,
-        legalName,
+        firstName: cleanFirstName,
+        lastName: cleanLastName,
+        legalName: cleanLegalName,
         serviceStreet,
         serviceCity,
         serviceState,
@@ -91,7 +102,7 @@ export async function POST(request: NextRequest) {
         mailingState,
         mailingZip,
         mailingCountry,
-        primaryEmail,
+        primaryEmail: primaryEmail || undefined,
         primaryPhone,
         totalWaterRightAcres: parseFloat(totalWaterRightAcres),
         assessedAcres: parseFloat(assessedAcres),

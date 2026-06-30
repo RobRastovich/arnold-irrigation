@@ -34,9 +34,22 @@ export default function NewPatronPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
+  const hasValidName = () => {
+    const legal = formData.legalName.trim()
+    const first = formData.firstName.trim()
+    const last = formData.lastName.trim()
+    return !!(legal || (first && last))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    if (!hasValidName()) {
+      setError('Please provide either a Legal Name or both First Name and Last Name.')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -123,12 +136,11 @@ export default function NewPatronPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        First Name *
+                        First Name
                       </label>
                       <input
                         type="text"
                         name="firstName"
-                        required
                         value={formData.firstName}
                         onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -136,12 +148,11 @@ export default function NewPatronPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Last Name *
+                        Last Name
                       </label>
                       <input
                         type="text"
                         name="lastName"
-                        required
                         value={formData.lastName}
                         onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -149,12 +160,11 @@ export default function NewPatronPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Primary Email *
+                        Primary Email
                       </label>
                       <input
                         type="email"
                         name="primaryEmail"
-                        required
                         value={formData.primaryEmail}
                         onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"

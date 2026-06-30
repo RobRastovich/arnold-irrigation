@@ -214,7 +214,9 @@ function WeirBooksPrintContent() {
                           <td className="item-indent">↳</td>
                           <td>
                             {item.patron
-                              ? `${item.patron.firstName} ${item.patron.lastName} (${item.accountNumber})`
+                              ? ((item.patron.firstName || item.patron.lastName)
+                                  ? `${item.patron.firstName || ''} ${item.patron.lastName || ''}`.trim()
+                                  : item.patron.legalName || item.accountNumber) + ` (${item.accountNumber})`
                               : ''}
                           </td>
                           <td>{item.acres != null ? item.acres.toFixed(2) : ''}</td>

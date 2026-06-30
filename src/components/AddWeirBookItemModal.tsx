@@ -5,8 +5,9 @@ import { useState, useEffect } from 'react'
 interface Patron {
   id: string
   accountNumber: string
-  firstName: string
-  lastName: string
+  firstName?: string
+  lastName?: string
+  legalName?: string
 }
 
 interface AddWeirBookItemModalProps {
@@ -123,7 +124,9 @@ export default function AddWeirBookItemModal({
                 <option value="">Select a patron</option>
                 {patrons.map((p) => (
                   <option key={p.accountNumber} value={p.accountNumber}>
-                    {p.firstName} {p.lastName} ({p.accountNumber})
+                    {(p.firstName || p.lastName)
+                      ? `${p.firstName || ''} ${p.lastName || ''}`.trim()
+                      : p.legalName || p.accountNumber} ({p.accountNumber})
                   </option>
                 ))}
               </select>

@@ -17,8 +17,9 @@ interface Turnout {
   legalDescription: string
   patron?: {
     id: string
-    firstName: string
-    lastName: string
+    firstName?: string
+    lastName?: string
+    legalName?: string
   }
 }
 
@@ -208,7 +209,9 @@ export default function TurnoutsPage() {
             href={`/admin/patrons/${turnout.patron.id}`}
             className="text-blue-600 hover:text-blue-900"
           >
-            {turnout.patron.firstName} {turnout.patron.lastName}
+            {(turnout.patron.firstName || turnout.patron.lastName)
+              ? `${turnout.patron.firstName || ''} ${turnout.patron.lastName || ''}`.trim()
+              : turnout.patron.legalName || turnout.accountNumber}
           </Link>
         ) : (
           '-'

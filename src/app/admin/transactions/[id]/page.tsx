@@ -131,7 +131,9 @@ export default function TransactionDetailPage() {
                               href={`/admin/patrons/${item.patron.id}`}
                               className="text-blue-600 hover:text-blue-900"
                             >
-                              {item.patron.firstName} {item.patron.lastName} ({item.accountNumber})
+                              {(item.patron.firstName || item.patron.lastName)
+                                ? `${item.patron.firstName || ''} ${item.patron.lastName || ''}`.trim()
+                                : item.patron.legalName || item.accountNumber} ({item.accountNumber})
                             </Link>
                           ) : (
                             item.accountNumber

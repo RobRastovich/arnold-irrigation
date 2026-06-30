@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
             id: true,
             firstName: true,
             lastName: true,
+            legalName: true,
           },
         },
       },
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest) {
           select: {
             firstName: true,
             lastName: true,
+            legalName: true,
           },
         },
       },

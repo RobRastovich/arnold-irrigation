@@ -29,8 +29,10 @@ interface Turnout {
   legalDescription: string
   patron?: {
     id: string
-    firstName: string
-    lastName: string
+    firstName?: string
+    lastName?: string
+    legalName?: string
+    accountNumber?: string
   }
   notes: TurnoutNote[]
 }
@@ -167,11 +169,15 @@ export default function TurnoutDetailPage({ params }: { params: { id: string } }
                       href={`/admin/patrons/${turnout.patron.id}`}
                       className="text-blue-600 hover:text-blue-900"
                     >
-                      {turnout.patron.firstName} {turnout.patron.lastName}
+                      {(turnout.patron.firstName || turnout.patron.lastName)
+                        ? `${turnout.patron.firstName || ''} ${turnout.patron.lastName || ''}`.trim()
+                        : turnout.patron.legalName || turnout.accountNumber}
                     </Link>
                   ) : (
                     <p className="sf-field-value">
-                      {turnout.patron?.firstName} {turnout.patron?.lastName}
+                      {(turnout.patron?.firstName || turnout.patron?.lastName)
+                        ? `${turnout.patron?.firstName || ''} ${turnout.patron?.lastName || ''}`.trim()
+                        : turnout.patron?.legalName || turnout.accountNumber}
                     </p>
                   )}
                 </div>

@@ -6,8 +6,9 @@ import AdminSidebar from '@/components/AdminSidebar'
 
 interface Patron {
   accountNumber: string
-  firstName: string
-  lastName: string
+  firstName?: string
+  lastName?: string
+  legalName?: string
 }
 
 function NewTurnoutPageContent() {
@@ -147,7 +148,9 @@ function NewTurnoutPageContent() {
                 <option value="">Select a patron</option>
                 {patrons.map((patron) => (
                   <option key={patron.accountNumber} value={patron.accountNumber}>
-                    {patron.firstName} {patron.lastName} ({patron.accountNumber})
+                    {(patron.firstName || patron.lastName)
+                      ? `${patron.firstName || ''} ${patron.lastName || ''}`.trim()
+                      : patron.legalName || patron.accountNumber} ({patron.accountNumber})
                   </option>
                 ))}
               </select>
