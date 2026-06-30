@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 import ListViewModal from '@/components/ListViewModal'
+import { sortItems, nextSortConfig, SortConfig } from '@/lib/sort-utils'
 
 interface Turnout {
   id: string
@@ -32,6 +33,7 @@ export default function TurnoutsPage() {
   const [listViews, setListViews] = useState<any[]>([])
   const [selectedView, setSelectedView] = useState<any>(null)
   const [showListViewModal, setShowListViewModal] = useState(false)
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ column: null, direction: 'asc' })
 
   const availableColumns = [
     { id: 'accountNumber', label: 'Account #' },
@@ -120,7 +122,7 @@ export default function TurnoutsPage() {
     })
   }
 
-  const filteredTurnouts = (() => {
+  const sortedAndFilteredTurnouts = (() => {
     let result = turnouts
 
     // Apply saved view filters
@@ -140,14 +142,32 @@ export default function TurnoutsPage() {
       )
     }
 
+    // Apply sorting
+    result = sortItems(result, sortConfig, (item, column) => {
+      if (column === 'patronName') {
+        return (item.patron?.firstName || item.patron?.lastName)
+          ? `${item.patron?.firstName || ''} ${item.patron?.lastName || ''}`.trim()
+          : item.patron?.legalName || item.accountNumber
+      }
+      if (column === 'canalGate') {
+        return `${item.canal} ${item.gate}`
+      }
+      return (item as any)[column]
+    })
+
     return result
   })()
 
-  const handleSaveListView = async (view: { name: string; columns: string[]; filters: any[] }) => {
+  const handleSort = (columnId: string) => {
+    setSortConfig(nextSortConfig(sortConfig, columnId))
+  }
+
+  const handleSaveListView = async (view: { id?: string; name: string; columns: string[]; filters: any[] }) => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('/api/admin/list-views', {
-        method: 'POST',
+      const url = view.id ? `/api/admin/list-views/${view.id}` : '/api/admin/list-views'
+      const response = await fetch(url, {
+        method: view.id ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -162,6 +182,9 @@ export default function TurnoutsPage() {
 
       if (response.ok) {
         await fetchListViews()
+      } else {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save list view')
       }
     } catch (error) {
       console.error('Error saving list view:', error)
@@ -263,7 +286,7 @@ export default function TurnoutsPage() {
               onClick={() => setShowListViewModal(true)}
               className="sf-btn sf-btn-secondary"
             >
-              Create List View
+              {selectedView ? 'Edit List View' : 'Create List View'}
             </button>
             <Link
               href="/admin/turnouts/new"
@@ -328,12 +351,21 @@ export default function TurnoutsPage() {
                     <tr>
                       {getVisibleColumns().map((columnId: string) => {
                         const column = availableColumns.find((c) => c.id === columnId)
+                        const isSorted = sortConfig.column === columnId
                         return (
                           <th
                             key={columnId}
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            onClick={() => handleSort(columnId)}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100"
                           >
-                            {column?.label}
+                            <span className="flex items-center gap-1">
+                              {column?.label}
+                              {isSorted && (
+                                <span className="text-gray-400">
+                                  {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                </span>
+                              )}
+                            </span>
                           </th>
                         )
                       })}
@@ -343,7 +375,7 @@ export default function TurnoutsPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredTurnouts.length === 0 ? (
+                    {sortedAndFilteredTurnouts.length === 0 ? (
                       <tr>
                         <td
                           colSpan={getVisibleColumns().length + 1}
@@ -353,7 +385,7 @@ export default function TurnoutsPage() {
                         </td>
                       </tr>
                     ) : (
-                      filteredTurnouts.map((turnout) => (
+                      sortedAndFilteredTurnouts.map((turnout) => (
                         <tr key={turnout.id} className="hover:bg-gray-50">
                           {getVisibleColumns().map((columnId: string) => (
                             <td
@@ -388,6 +420,7 @@ export default function TurnoutsPage() {
         entityType="turnout"
         availableColumns={availableColumns}
         onSave={handleSaveListView}
+        existingView={selectedView || undefined}
       />
     </div>
   )

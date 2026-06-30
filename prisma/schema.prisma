@@ -66,7 +66,7 @@ model Patron {
   mailingZip            String?
   mailingCountry        String?
   primaryEmail          String?
-  primaryPhone          String
+  primaryPhone          String?
   totalWaterRightAcres  Float
   assessedAcres         Float
   isActive              Boolean  @default(true)

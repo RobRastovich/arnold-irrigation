@@ -18,7 +18,7 @@ interface ListViewModalProps {
   onClose: () => void
   entityType: string
   availableColumns: Column[]
-  onSave: (view: { name: string; columns: string[]; filters: Filter[] }) => void
+  onSave: (view: { id?: string; name: string; columns: string[]; filters: Filter[] }) => void
   existingView?: {
     id: string
     name: string
@@ -106,7 +106,7 @@ export default function ListViewModal({
     }
 
     try {
-      await onSave({ name, columns: selectedColumns, filters })
+      await onSave({ id: existingView?.id, name, columns: selectedColumns, filters })
       onClose()
     } catch (err: any) {
       setError(err.message || 'Failed to save list view')

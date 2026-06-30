@@ -69,7 +69,7 @@ export default function EditPatronPage() {
         mailingZip: data.mailingZip || '',
         mailingCountry: data.mailingCountry || '',
         primaryEmail: data.primaryEmail || '',
-        primaryPhone: data.primaryPhone,
+        primaryPhone: data.primaryPhone || '',
         totalWaterRightAcres: data.totalWaterRightAcres.toString(),
         assessedAcres: data.assessedAcres.toString(),
         isActive: data.isActive,
@@ -269,12 +269,11 @@ export default function EditPatronPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Primary Phone *
+                        Primary Phone
                       </label>
                       <input
                         type="tel"
                         name="primaryPhone"
-                        required
                         value={formData.primaryPhone}
                         onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"

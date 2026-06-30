@@ -201,7 +201,7 @@ export default function PatronDetailPage() {
                 </div>
                 <div>
                   <p className="sf-field-label">Primary Phone</p>
-                  <p className="sf-field-value">{patron.primaryPhone}</p>
+                  <p className="sf-field-value">{patron.primaryPhone || 'N/A'}</p>
                 </div>
               </div>
             </div>

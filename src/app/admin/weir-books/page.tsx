@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 import ListViewModal from '@/components/ListViewModal'
+import { sortItems, nextSortConfig, SortConfig } from '@/lib/sort-utils'
 
 export default function WeirBooksPage() {
   const [weirBooks, setWeirBooks] = useState<any[]>([])
@@ -12,6 +13,7 @@ export default function WeirBooksPage() {
   const [listViews, setListViews] = useState<any[]>([])
   const [selectedView, setSelectedView] = useState<any>(null)
   const [showListViewModal, setShowListViewModal] = useState(false)
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ column: null, direction: 'asc' })
 
   const availableColumns = [
     { id: 'weirLocation', label: 'Weir Location' },
@@ -89,7 +91,7 @@ export default function WeirBooksPage() {
     )
   }
 
-  const filteredWeirBooks = (() => {
+  const sortedAndFilteredWeirBooks = (() => {
     let result = weirBooks.map((wb) => ({ ...wb, itemCount: wb.items?.length ?? 0 }))
 
     if (selectedView && selectedView.filters && selectedView.filters.length > 0) {
@@ -106,14 +108,21 @@ export default function WeirBooksPage() {
       )
     }
 
+    result = sortItems(result, sortConfig)
+
     return result
   })()
 
-  const handleSaveListView = async (view: { name: string; columns: string[]; filters: any[] }) => {
+  const handleSort = (columnId: string) => {
+    setSortConfig(nextSortConfig(sortConfig, columnId))
+  }
+
+  const handleSaveListView = async (view: { id?: string; name: string; columns: string[]; filters: any[] }) => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('/api/admin/list-views', {
-        method: 'POST',
+      const url = view.id ? `/api/admin/list-views/${view.id}` : '/api/admin/list-views'
+      const response = await fetch(url, {
+        method: view.id ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -127,6 +136,9 @@ export default function WeirBooksPage() {
       })
       if (response.ok) {
         await fetchListViews()
+      } else {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save list view')
       }
     } catch (error) {
       console.error('Error saving list view:', error)
@@ -196,7 +208,7 @@ export default function WeirBooksPage() {
               onClick={() => setShowListViewModal(true)}
               className="sf-btn sf-btn-secondary"
             >
-              Create List View
+              {selectedView ? 'Edit List View' : 'Create List View'}
             </button>
             <Link href="/admin/weir-books/new" className="sf-btn sf-btn-primary">
               + New Weir Book
@@ -250,15 +262,25 @@ export default function WeirBooksPage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
                 <p className="mt-2 text-gray-600">Loading weir books...</p>
               </div>
-            ) : filteredWeirBooks.length === 0 ? (
+            ) : sortedAndFilteredWeirBooks.length === 0 ? (
               <div className="p-8 text-center text-gray-500">No weir books found</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 sticky top-0">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Location</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Canal</th>
+                      <th
+                        onClick={() => handleSort('weirLocation')}
+                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28 cursor-pointer select-none hover:bg-gray-100"
+                      >
+                        <span className="flex items-center gap-1">Location {sortConfig.column === 'weirLocation' && <span className="text-gray-400">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>}</span>
+                      </th>
+                      <th
+                        onClick={() => handleSort('canal')}
+                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100"
+                      >
+                        <span className="flex items-center gap-1">Canal {sortConfig.column === 'canal' && <span className="text-gray-400">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>}</span>
+                      </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patron</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Acres</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Private Acres</th>
@@ -268,7 +290,7 @@ export default function WeirBooksPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
-                    {filteredWeirBooks.map((wb) => (
+                    {sortedAndFilteredWeirBooks.map((wb) => (
                       <React.Fragment key={wb.id}>
                         {/* Weir Book header row */}
                         <tr className="bg-blue-50 border-t-2 border-blue-200">
@@ -384,6 +406,7 @@ export default function WeirBooksPage() {
         entityType="weirBook"
         availableColumns={availableColumns}
         onSave={handleSaveListView}
+        existingView={selectedView || undefined}
       />
     </div>
   )

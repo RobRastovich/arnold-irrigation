@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 import ListViewModal from '@/components/ListViewModal'
+import { sortItems, nextSortConfig, SortConfig } from '@/lib/sort-utils'
 
 export default function PatronsPage() {
   const router = useRouter()
@@ -14,6 +15,10 @@ export default function PatronsPage() {
   const [listViews, setListViews] = useState<any[]>([])
   const [selectedView, setSelectedView] = useState<any>(null)
   const [showListViewModal, setShowListViewModal] = useState(false)
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    column: null,
+    direction: 'asc',
+  })
 
   const availableColumns = [
     { id: 'accountNumber', label: 'Account #' },
@@ -112,7 +117,7 @@ export default function PatronsPage() {
     })
   }
 
-  const filteredPatrons = (() => {
+  const sortedAndFilteredPatrons = (() => {
     let result = patrons
 
     // Apply saved view filters
@@ -135,14 +140,27 @@ export default function PatronsPage() {
       )
     }
 
+    // Apply sorting
+    result = sortItems(result, sortConfig, (item, column) => {
+      if (column === 'name') {
+        return `${item.firstName ?? ''} ${item.lastName ?? ''}`.trim() || item.legalName || ''
+      }
+      return item[column]
+    })
+
     return result
   })()
 
-  const handleSaveListView = async (view: { name: string; columns: string[]; filters: any[] }) => {
+  const handleSort = (columnId: string) => {
+    setSortConfig(nextSortConfig(sortConfig, columnId))
+  }
+
+  const handleSaveListView = async (view: { id?: string; name: string; columns: string[]; filters: any[] }) => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('/api/admin/list-views', {
-        method: 'POST',
+      const url = view.id ? `/api/admin/list-views/${view.id}` : '/api/admin/list-views'
+      const response = await fetch(url, {
+        method: view.id ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -157,6 +175,9 @@ export default function PatronsPage() {
 
       if (response.ok) {
         await fetchListViews()
+      } else {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save list view')
       }
     } catch (error) {
       console.error('Error saving list view:', error)
@@ -214,7 +235,7 @@ export default function PatronsPage() {
       case 'primaryEmail':
         return patron.primaryEmail || '-'
       case 'primaryPhone':
-        return patron.primaryPhone
+        return patron.primaryPhone || '-'
       case 'serviceStreet':
         return patron.serviceStreet || '-'
       case 'serviceCity':
@@ -258,7 +279,7 @@ export default function PatronsPage() {
               onClick={() => setShowListViewModal(true)}
               className="sf-btn sf-btn-secondary"
             >
-              Create List View
+              {selectedView ? 'Edit List View' : 'Create List View'}
             </button>
             <Link
               href="/admin/patrons/new"
@@ -323,12 +344,21 @@ export default function PatronsPage() {
                     <tr>
                       {getVisibleColumns().map((columnId: string) => {
                         const column = availableColumns.find((c) => c.id === columnId)
+                        const isSorted = sortConfig.column === columnId
                         return (
                           <th
                             key={columnId}
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            onClick={() => handleSort(columnId)}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100"
                           >
-                            {column?.label}
+                            <span className="flex items-center gap-1">
+                              {column?.label}
+                              {isSorted && (
+                                <span className="text-gray-400">
+                                  {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                </span>
+                              )}
+                            </span>
                           </th>
                         )
                       })}
@@ -338,7 +368,7 @@ export default function PatronsPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredPatrons.length === 0 ? (
+                    {sortedAndFilteredPatrons.length === 0 ? (
                       <tr>
                         <td
                           colSpan={getVisibleColumns().length + 1}
@@ -348,7 +378,7 @@ export default function PatronsPage() {
                         </td>
                       </tr>
                     ) : (
-                      filteredPatrons.map((patron) => (
+                      sortedAndFilteredPatrons.map((patron) => (
                         <tr key={patron.id} className="hover:bg-gray-50">
                           {getVisibleColumns().map((columnId: string) => (
                             <td
@@ -383,6 +413,7 @@ export default function PatronsPage() {
         entityType="patron"
         availableColumns={availableColumns}
         onSave={handleSaveListView}
+        existingView={selectedView || undefined}
       />
     </div>
   )

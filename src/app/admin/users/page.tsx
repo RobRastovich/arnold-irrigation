@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 import ListViewModal from '@/components/ListViewModal'
+import { sortItems, nextSortConfig, SortConfig } from '@/lib/sort-utils'
 
 export default function UsersPage() {
   const router = useRouter()
@@ -14,6 +15,7 @@ export default function UsersPage() {
   const [listViews, setListViews] = useState<any[]>([])
   const [selectedView, setSelectedView] = useState<any>(null)
   const [showListViewModal, setShowListViewModal] = useState(false)
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ column: null, direction: 'asc' })
 
   const availableColumns = [
     { id: 'name', label: 'Name' },
@@ -101,7 +103,7 @@ export default function UsersPage() {
     })
   }
 
-  const filteredUsers = (() => {
+  const sortedAndFilteredUsers = (() => {
     let result = users
 
     // Apply saved view filters
@@ -119,14 +121,27 @@ export default function UsersPage() {
       )
     }
 
+    // Apply sorting
+    result = sortItems(result, sortConfig, (item, column) => {
+      if (column === 'name') {
+        return `${item.firstName ?? ''} ${item.lastName ?? ''}`.trim()
+      }
+      return item[column]
+    })
+
     return result
   })()
 
-  const handleSaveListView = async (view: { name: string; columns: string[]; filters: any[] }) => {
+  const handleSort = (columnId: string) => {
+    setSortConfig(nextSortConfig(sortConfig, columnId))
+  }
+
+  const handleSaveListView = async (view: { id?: string; name: string; columns: string[]; filters: any[] }) => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('/api/admin/list-views', {
-        method: 'POST',
+      const url = view.id ? `/api/admin/list-views/${view.id}` : '/api/admin/list-views'
+      const response = await fetch(url, {
+        method: view.id ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -141,6 +156,9 @@ export default function UsersPage() {
 
       if (response.ok) {
         await fetchListViews()
+      } else {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save list view')
       }
     } catch (error) {
       console.error('Error saving list view:', error)
@@ -237,7 +255,7 @@ export default function UsersPage() {
               onClick={() => setShowListViewModal(true)}
               className="sf-btn sf-btn-secondary"
             >
-              Create List View
+              {selectedView ? 'Edit List View' : 'Create List View'}
             </button>
             <Link
               href="/admin/users/new"
@@ -302,12 +320,21 @@ export default function UsersPage() {
                     <tr>
                       {getVisibleColumns().map((columnId: string) => {
                         const column = availableColumns.find((c) => c.id === columnId)
+                        const isSorted = sortConfig.column === columnId
                         return (
                           <th
                             key={columnId}
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            onClick={() => handleSort(columnId)}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100"
                           >
-                            {column?.label}
+                            <span className="flex items-center gap-1">
+                              {column?.label}
+                              {isSorted && (
+                                <span className="text-gray-400">
+                                  {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                </span>
+                              )}
+                            </span>
                           </th>
                         )
                       })}
@@ -317,7 +344,7 @@ export default function UsersPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredUsers.length === 0 ? (
+                    {sortedAndFilteredUsers.length === 0 ? (
                       <tr>
                         <td
                           colSpan={getVisibleColumns().length + 1}
@@ -327,7 +354,7 @@ export default function UsersPage() {
                         </td>
                       </tr>
                     ) : (
-                      filteredUsers.map((user) => (
+                      sortedAndFilteredUsers.map((user) => (
                         <tr key={user.id} className="hover:bg-gray-50">
                           {getVisibleColumns().map((columnId: string) => (
                             <td
@@ -362,6 +389,7 @@ export default function UsersPage() {
         entityType="user"
         availableColumns={availableColumns}
         onSave={handleSaveListView}
+        existingView={selectedView || undefined}
       />
     </div>
   )

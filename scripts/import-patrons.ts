@@ -62,8 +62,8 @@ async function main() {
     const city      = (row.city    || 'Bend').trim()
     const state     = (row.state   || 'OR').trim()
     const zip       = (row.zip     || '').trim()
-    const phone     = (row.phone   || '').trim()
-    const email     = (row.email   || '').trim()
+    const phone     = (row.phone   || '').trim() || undefined
+    const email     = (row.email   || '').trim() || undefined
     const wrAcres   = parseFloat(row.WRacres    || '0') || 0
     const asAcres   = parseFloat(row.Ttlasacres || '0') || 0
 

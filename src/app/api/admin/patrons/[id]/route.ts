@@ -54,6 +54,9 @@ export async function PUT(
     if (body.primaryEmail === '') {
       body.primaryEmail = undefined
     }
+    if (body.primaryPhone === '') {
+      body.primaryPhone = undefined
+    }
 
     const cleanFirstName = body.firstName?.trim() || undefined
     const cleanLastName = body.lastName?.trim() || undefined

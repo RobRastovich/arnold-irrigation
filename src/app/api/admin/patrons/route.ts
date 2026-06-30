@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         mailingZip,
         mailingCountry,
         primaryEmail: primaryEmail || undefined,
-        primaryPhone,
+        primaryPhone: primaryPhone || undefined,
         totalWaterRightAcres: parseFloat(totalWaterRightAcres),
         assessedAcres: parseFloat(assessedAcres),
       },
