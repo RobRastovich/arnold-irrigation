@@ -13,22 +13,28 @@ interface Patron {
 
 interface TransactionItemForm {
   accountNumber: string
+  type: 'CANCEL' | 'TRANSFER' | 'ACTIVE'
+  toAccountNumber: string
   parcelNumber: string
   legalDescription: string
   taxLot: string
   subdivision: string
   waterRightAcres: string
   transactionDate: string
+  memo: string
 }
 
 const emptyItem = (): TransactionItemForm => ({
   accountNumber: '',
+  type: 'ACTIVE',
+  toAccountNumber: '',
   parcelNumber: '',
   legalDescription: '',
   taxLot: '',
   subdivision: '',
   waterRightAcres: '',
   transactionDate: '',
+  memo: '',
 })
 
 function NewTransactionPageContent() {
@@ -39,14 +45,8 @@ function NewTransactionPageContent() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const [type, setType] = useState<'CANCEL' | 'TRANSFER' | 'ACTIVE'>('CANCEL')
-
-  // Cancel: one item, pre-populated from query param
-  const [cancelItem, setCancelItem] = useState<TransactionItemForm>(emptyItem())
-
-  // Transfer: fromItem and toItem
-  const [fromItem, setFromItem] = useState<TransactionItemForm>(emptyItem())
-  const [toItem, setToItem] = useState<TransactionItemForm>(emptyItem())
+  // Items list — start with one empty item
+  const [items, setItems] = useState<TransactionItemForm[]>([emptyItem()])
 
   useEffect(() => {
     fetchPatrons()
@@ -55,8 +55,7 @@ function NewTransactionPageContent() {
   useEffect(() => {
     const accountNumber = searchParams.get('accountNumber')
     if (accountNumber) {
-      setCancelItem(prev => ({ ...prev, accountNumber }))
-      setFromItem(prev => ({ ...prev, accountNumber }))
+      setItems(prev => prev.map((item, i) => i === 0 ? { ...item, accountNumber } : item))
     }
   }, [searchParams])
 
@@ -76,35 +75,24 @@ function NewTransactionPageContent() {
     }
   }
 
+  const updateItem = (index: number, field: keyof TransactionItemForm, value: string) => {
+    setItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item))
+  }
+
+  const addItem = () => setItems(prev => [...prev, emptyItem()])
+
+  const removeItem = (index: number) => setItems(prev => prev.filter((_, i) => i !== index))
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
     setError('')
 
     try {
-      let items: TransactionItemForm[] = []
-
-      if (type === 'CANCEL') {
-        if (!cancelItem.accountNumber) {
-          setError('Please select a patron')
-          setSubmitting(false)
-          return
-        }
-        items = [cancelItem]
-      } else if (type === 'TRANSFER') {
-        if (!fromItem.accountNumber || !toItem.accountNumber) {
-          setError('Please select both From and To patrons')
-          setSubmitting(false)
-          return
-        }
-        if (fromItem.accountNumber === toItem.accountNumber) {
-          setError('From and To patrons must be different')
-          setSubmitting(false)
-          return
-        }
-        items = [fromItem, toItem]
-      } else {
-        items = [cancelItem]
+      if (items.length === 0 || items.some(item => !item.accountNumber)) {
+        setError('Please select a patron for each item')
+        setSubmitting(false)
+        return
       }
 
       const token = localStorage.getItem('token')
@@ -114,7 +102,7 @@ function NewTransactionPageContent() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ type, items }),
+        body: JSON.stringify({ items }),
       })
 
       if (!response.ok) {
@@ -143,35 +131,73 @@ function NewTransactionPageContent() {
 
   const renderItemFields = (
     item: TransactionItemForm,
-    onChange: (field: keyof TransactionItemForm, value: string) => void,
-    label: string
+    index: number
   ) => (
-    <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{label}</h3>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Patron *</label>
-        <select
-          value={item.accountNumber}
-          onChange={e => onChange('accountNumber', e.target.value)}
-          required
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-        >
-          <option value="">Select a patron</option>
-          {patrons.map(p => (
-            <option key={p.accountNumber} value={p.accountNumber}>
-              {p.firstName} {p.lastName} ({p.accountNumber})
-            </option>
-          ))}
-        </select>
+    <div className="bg-gray-50 rounded-lg p-4 space-y-4 border border-gray-200">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Item {index + 1}</h3>
+        {items.length > 1 && (
+          <button
+            type="button"
+            onClick={() => removeItem(index)}
+            className="text-xs text-red-600 hover:text-red-800"
+          >
+            Remove
+          </button>
+        )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+          <select
+            value={item.type}
+            onChange={e => updateItem(index, 'type', e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="ACTIVE">Active</option>
+            <option value="TRANSFER">Transfer</option>
+            <option value="CANCEL">Cancel</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Patron *</label>
+          <select
+            value={item.accountNumber}
+            onChange={e => updateItem(index, 'accountNumber', e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="">Select a patron</option>
+            {patrons.map(p => (
+              <option key={p.accountNumber} value={p.accountNumber}>
+                {p.firstName} {p.lastName} ({p.accountNumber})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">To Account</label>
+          <select
+            value={item.toAccountNumber}
+            onChange={e => updateItem(index, 'toAccountNumber', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="">None</option>
+            {patrons.filter(p => p.accountNumber !== item.accountNumber).map(p => (
+              <option key={p.accountNumber} value={p.accountNumber}>
+                {p.firstName} {p.lastName} ({p.accountNumber})
+              </option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Parcel Number</label>
           <input
             type="text"
             maxLength={25}
             value={item.parcelNumber}
-            onChange={e => onChange('parcelNumber', e.target.value)}
+            onChange={e => updateItem(index, 'parcelNumber', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
@@ -181,7 +207,7 @@ function NewTransactionPageContent() {
             type="text"
             maxLength={25}
             value={item.subdivision}
-            onChange={e => onChange('subdivision', e.target.value)}
+            onChange={e => updateItem(index, 'subdivision', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
@@ -191,7 +217,7 @@ function NewTransactionPageContent() {
             type="text"
             maxLength={255}
             value={item.taxLot}
-            onChange={e => onChange('taxLot', e.target.value)}
+            onChange={e => updateItem(index, 'taxLot', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
@@ -201,7 +227,7 @@ function NewTransactionPageContent() {
             type="number"
             step="0.01"
             value={item.waterRightAcres}
-            onChange={e => onChange('waterRightAcres', e.target.value)}
+            onChange={e => updateItem(index, 'waterRightAcres', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
@@ -210,7 +236,7 @@ function NewTransactionPageContent() {
           <input
             type="date"
             value={item.transactionDate}
-            onChange={e => onChange('transactionDate', e.target.value)}
+            onChange={e => updateItem(index, 'transactionDate', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
@@ -221,7 +247,16 @@ function NewTransactionPageContent() {
           maxLength={255}
           rows={2}
           value={item.legalDescription}
-          onChange={e => onChange('legalDescription', e.target.value)}
+          onChange={e => updateItem(index, 'legalDescription', e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Memo</label>
+        <textarea
+          rows={2}
+          value={item.memo}
+          onChange={e => updateItem(index, 'memo', e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
       </div>
@@ -263,41 +298,17 @@ function NewTransactionPageContent() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Transaction Type *
-                  </label>
-                  <select
-                    value={type}
-                    onChange={e => setType(e.target.value as 'CANCEL' | 'TRANSFER' | 'ACTIVE')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="CANCEL">Cancel</option>
-                    <option value="TRANSFER">Transfer</option>
-                    <option value="ACTIVE">Active</option>
-                  </select>
+                <div className="space-y-4">
+                  {items.map((item, index) => renderItemFields(item, index))}
                 </div>
 
-                {type === 'TRANSFER' ? (
-                  <div className="space-y-4">
-                    {renderItemFields(
-                      fromItem,
-                      (field, value) => setFromItem(prev => ({ ...prev, [field]: value })),
-                      'From Patron (Water Giver)'
-                    )}
-                    {renderItemFields(
-                      toItem,
-                      (field, value) => setToItem(prev => ({ ...prev, [field]: value })),
-                      'To Patron (Water Receiver)'
-                    )}
-                  </div>
-                ) : (
-                  renderItemFields(
-                    cancelItem,
-                    (field, value) => setCancelItem(prev => ({ ...prev, [field]: value })),
-                    'Patron'
-                  )
-                )}
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="w-full border-2 border-dashed border-gray-300 text-gray-500 px-4 py-2 rounded-lg hover:border-primary-400 hover:text-primary-600 transition text-sm"
+                >
+                  + Add Another Item
+                </button>
 
                 <div className="flex gap-4 pt-2">
                   <button

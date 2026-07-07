@@ -2,9 +2,12 @@
  * Import Allocation.csv into Transaction + TransactionItem tables.
  *
  * Mapping:
- *   Ec: "T" → TRANSFER, "C" → CANCEL, "A" → ACTIVE
+ *   Ec (per item): "T" → TRANSFER, "C" → CANCEL, "A" → ACTIVE
  *   Transno: groups items into one Transaction; blank rows use recno as the key
  *   One Transaction per unique Transno (or recno when Transno is blank)
+ *   Toacct: lookup to Patron by accountNumber; if multiple values (excluding
+ *           the row's own Acctnbr), duplicate the item for each to-account.
+ *   Memo: mapped to the memo field on TransactionItem.
  *
  * Run with: npx tsx scripts/import-allocations.ts
  */
@@ -30,6 +33,19 @@ function parseDate(raw: string): Date | null {
   // Reject obviously bogus dates (1905 placeholder)
   if (isNaN(d.getTime()) || d.getFullYear() < 1950) return null
   return d
+}
+
+/**
+ * Parse the Toacct field, which may contain one or more account numbers
+ * separated by slashes, commas, or spaces. Filters out the source accountNumber
+ * itself. Returns an empty array when there are no qualifying to-accounts.
+ */
+function parseToAccounts(raw: string, sourceAccountNumber: string): string[] {
+  if (!raw) return []
+  return raw
+    .split(/[\/,\s]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && s !== sourceAccountNumber)
 }
 
 async function main() {
@@ -61,17 +77,15 @@ async function main() {
   let itemCreated = 0, itemSkipped = 0, itemNoPatron = 0, errors = 0
 
   for (const [txKey, txRows] of txGroups) {
-    const firstRow = txRows[0]
-    const type = mapEc(firstRow.Ec)
     const transactionNumber = txKey
 
-    // Upsert the Transaction
+    // Upsert the Transaction (type is now on items, not the header)
     let transaction: { id: string }
     try {
       transaction = await prisma.transaction.upsert({
         where: { transactionNumber },
-        update: { type },
-        create: { transactionNumber, type },
+        update: {},
+        create: { transactionNumber },
       })
       txCreated++
     } catch (err: any) {
@@ -92,30 +106,51 @@ async function main() {
         continue
       }
 
+      const type            = mapEc(row.Ec)
       const legalDescription = (row.Legaldesc || '').trim() || null
       const taxLot           = (row.Taxlot    || '').trim() || null
       const subdivision      = String(row.Subdiv || '').trim() || null
       const parcelNumber     = (row.Parcel    || '').trim() || null
       const waterRightAcres  = parseFloat(row.WRacres || '') || null
       const transactionDate  = parseDate(row.Transdate)
+      const memo             = (row.Memo || '').trim() || null
 
-      try {
-        await prisma.transactionItem.create({
-          data: {
-            transactionId:   transaction.id,
-            accountNumber,
-            parcelNumber,
-            legalDescription,
-            taxLot,
-            subdivision,
-            waterRightAcres,
-            transactionDate,
-          },
-        })
-        itemCreated++
-      } catch (err: any) {
-        console.error(`  ERROR item recno ${row.recno} acct ${accountNumber}: ${err.message}`)
-        errors++
+      // Resolve to-accounts: filter unknown patrons, exclude self
+      const rawToAccounts = parseToAccounts(String(row.Toacct || ''), accountNumber)
+      const toAccounts = rawToAccounts.filter((a) => {
+        if (!knownAccounts.has(a)) {
+          console.warn(`  WARN: toacct ${a} not in patrons — skipping to-account for recno ${row.recno}`)
+          return false
+        }
+        return true
+      })
+
+      // If no qualifying to-accounts, create one item with toAccountNumber = null
+      // If one or more, create one item per to-account
+      const toAccountList = toAccounts.length > 0 ? toAccounts : [null]
+
+      for (const toAccountNumber of toAccountList) {
+        try {
+          await prisma.transactionItem.create({
+            data: {
+              transactionId:   transaction.id,
+              accountNumber,
+              type,
+              toAccountNumber,
+              parcelNumber,
+              legalDescription,
+              taxLot,
+              subdivision,
+              waterRightAcres,
+              transactionDate,
+              memo,
+            },
+          })
+          itemCreated++
+        } catch (err: any) {
+          console.error(`  ERROR item recno ${row.recno} acct ${accountNumber} toAcct ${toAccountNumber}: ${err.message}`)
+          errors++
+        }
       }
     }
   }

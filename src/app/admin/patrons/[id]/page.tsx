@@ -484,11 +484,11 @@ export default function PatronDetailPage() {
                         </td>
                         <td>
                           <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                            item.transaction.type === 'CANCEL' ? 'bg-red-100 text-red-800' :
-                            item.transaction.type === 'TRANSFER' ? 'bg-blue-100 text-blue-800' :
+                            item.type === 'CANCEL' ? 'bg-red-100 text-red-800' :
+                            item.type === 'TRANSFER' ? 'bg-blue-100 text-blue-800' :
                             'bg-green-100 text-green-800'
                           }`}>
-                            {item.transaction.type}
+                            {item.type}
                           </span>
                         </td>
                         <td className="text-xs">

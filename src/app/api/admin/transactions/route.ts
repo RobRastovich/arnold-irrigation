@@ -53,18 +53,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { type, items } = body
+    const { items } = body
 
-    if (!type || !items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: 'Type and items are required' }, { status: 400 })
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: 'Items are required' }, { status: 400 })
     }
 
-    if (!['CANCEL', 'TRANSFER', 'ACTIVE'].includes(type)) {
-      return NextResponse.json({ error: 'Invalid transaction type' }, { status: 400 })
-    }
+    const validTypes = ['CANCEL', 'TRANSFER', 'ACTIVE']
 
-    // Validate all patron account numbers exist
+    // Validate all patron account numbers and types exist
     for (const item of items) {
+      if (!validTypes.includes(item.type)) {
+        return NextResponse.json({ error: `Invalid transaction type: ${item.type}` }, { status: 400 })
+      }
       const patron = await prisma.patron.findUnique({
         where: { accountNumber: item.accountNumber },
       })
@@ -73,6 +74,17 @@ export async function POST(request: NextRequest) {
           { error: `Patron with account number ${item.accountNumber} not found` },
           { status: 404 }
         )
+      }
+      if (item.toAccountNumber) {
+        const toPatron = await prisma.patron.findUnique({
+          where: { accountNumber: item.toAccountNumber },
+        })
+        if (!toPatron) {
+          return NextResponse.json(
+            { error: `To-account patron ${item.toAccountNumber} not found` },
+            { status: 404 }
+          )
+        }
       }
     }
 
@@ -90,16 +102,18 @@ export async function POST(request: NextRequest) {
     const transaction = await prisma.transaction.create({
       data: {
         transactionNumber: nextNumber,
-        type,
         items: {
           create: items.map((item: any) => ({
             accountNumber: item.accountNumber,
+            type: item.type,
+            toAccountNumber: item.toAccountNumber || null,
             parcelNumber: item.parcelNumber || null,
             legalDescription: item.legalDescription || null,
             taxLot: item.taxLot || null,
             subdivision: item.subdivision || null,
             waterRightAcres: item.waterRightAcres ? parseFloat(item.waterRightAcres) : null,
             transactionDate: item.transactionDate ? new Date(item.transactionDate) : null,
+            memo: item.memo || null,
           })),
         },
       },

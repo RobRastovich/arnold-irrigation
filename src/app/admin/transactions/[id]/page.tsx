@@ -80,20 +80,10 @@ export default function TransactionDetailPage() {
             {/* Basic Information */}
             <div className="sf-card">
               <div className="sf-card-header">Transaction Information</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="sf-field-label">Transaction Number</p>
                   <p className="sf-field-value">{transaction.transactionNumber}</p>
-                </div>
-                <div>
-                  <p className="sf-field-label">Type</p>
-                  <span className={`px-2 py-1 text-xs font-medium rounded ${
-                    transaction.type === 'CANCEL' ? 'bg-red-100 text-red-800' :
-                    transaction.type === 'TRANSFER' ? 'bg-blue-100 text-blue-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
-                    {transaction.type}
-                  </span>
                 </div>
                 <div>
                   <p className="sf-field-label">Created</p>
@@ -113,18 +103,30 @@ export default function TransactionDetailPage() {
                 <table className="sf-table">
                   <thead>
                     <tr>
+                      <th>Type</th>
                       <th>Patron</th>
+                      <th>To Account</th>
                       <th>Parcel #</th>
                       <th>Water Right Acres</th>
                       <th>Tax Lot</th>
                       <th>Sub-division</th>
                       <th>Transaction Date</th>
                       <th>Legal Description</th>
+                      <th>Memo</th>
                     </tr>
                   </thead>
                   <tbody>
                     {transaction.items.map((item: any) => (
                       <tr key={item.id}>
+                        <td>
+                          <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                            item.type === 'CANCEL' ? 'bg-red-100 text-red-800' :
+                            item.type === 'TRANSFER' ? 'bg-blue-100 text-blue-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {item.type}
+                          </span>
+                        </td>
                         <td>
                           {item.patron?.id ? (
                             <Link
@@ -139,6 +141,7 @@ export default function TransactionDetailPage() {
                             item.accountNumber
                           )}
                         </td>
+                        <td>{item.toAccountNumber || '-'}</td>
                         <td>{item.parcelNumber || '-'}</td>
                         <td>{item.waterRightAcres != null ? item.waterRightAcres.toFixed(2) : '-'}</td>
                         <td>{item.taxLot || '-'}</td>
@@ -149,6 +152,7 @@ export default function TransactionDetailPage() {
                             : '-'}
                         </td>
                         <td>{item.legalDescription || '-'}</td>
+                        <td className="text-xs max-w-xs truncate">{item.memo || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
