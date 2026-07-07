@@ -58,6 +58,12 @@ async function main() {
   })
   console.log(`Parsed ${rows.length} rows from Allocation.csv`)
 
+  // Wipe existing data so re-runs don't duplicate
+  console.log('Deleting existing transaction items and transactions...')
+  await prisma.transactionItem.deleteMany({})
+  await prisma.transaction.deleteMany({})
+  console.log('Deleted.')
+
   // Build patron account number lookup
   const patrons = await prisma.patron.findMany({ select: { accountNumber: true } })
   const knownAccounts = new Set(patrons.map((p) => p.accountNumber))

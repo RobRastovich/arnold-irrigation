@@ -44,8 +44,25 @@ export async function GET(
 
     const userMap = new Map(users.map((u: any) => [u.id, u]))
 
+    // Look up associated WeirBook by canal + gate (weirNumber)
+    const weirBook = turnout.gate
+      ? await prisma.weirBook.findFirst({
+          where: {
+            canal: turnout.canal,
+            weirNumber: turnout.gate,
+          },
+          select: {
+            id: true,
+            weirNumber: true,
+            canal: true,
+            weirLocation: true,
+          },
+        })
+      : null
+
     const turnoutWithCreators = {
       ...turnout,
+      weirBook,
       notes: turnout.notes.map((note: any) => ({
         ...note,
         creator: note.createdBy ? userMap.get(note.createdBy) : null

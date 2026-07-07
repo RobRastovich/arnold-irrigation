@@ -468,7 +468,9 @@ export default function PatronDetailPage() {
                       <th>Parcel #</th>
                       <th>Water Right Acres</th>
                       <th>Tax Lot</th>
+                      <th>To Account</th>
                       <th>Legal Description</th>
+                      <th>Memo</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -500,12 +502,25 @@ export default function PatronDetailPage() {
                         <td>{item.waterRightAcres != null ? item.waterRightAcres.toFixed(2) : '-'}</td>
                         <td>{item.taxLot || '-'}</td>
                         <td>
+                          {item.toPatron?.id ? (
+                            <Link
+                              href={`/admin/patrons/${item.toPatron.id}`}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              {(item.toPatron.firstName || item.toPatron.lastName)
+                                ? `${item.toPatron.firstName || ''} ${item.toPatron.lastName || ''}`.trim()
+                                : item.toPatron.legalName || item.toAccountNumber} ({item.toAccountNumber})
+                            </Link>
+                          ) : item.toAccountNumber || '-'}
+                        </td>
+                        <td>
                           {item.legalDescription
                             ? item.legalDescription.length > 60
                               ? `${item.legalDescription.substring(0, 60)}...`
                               : item.legalDescription
                             : '-'}
                         </td>
+                        <td className="text-xs max-w-xs truncate">{item.memo || '-'}</td>
                       </tr>
                     ))}
                   </tbody>

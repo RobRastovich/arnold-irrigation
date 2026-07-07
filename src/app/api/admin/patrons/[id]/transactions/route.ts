@@ -26,6 +26,15 @@ export async function GET(
       where: { accountNumber: patron.accountNumber },
       include: {
         transaction: true,
+        toPatron: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            legalName: true,
+            accountNumber: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     })

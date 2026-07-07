@@ -141,7 +141,18 @@ export default function TransactionDetailPage() {
                             item.accountNumber
                           )}
                         </td>
-                        <td>{item.toAccountNumber || '-'}</td>
+                        <td>
+                          {item.toPatron?.id ? (
+                            <Link
+                              href={`/admin/patrons/${item.toPatron.id}`}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              {(item.toPatron.firstName || item.toPatron.lastName)
+                                ? `${item.toPatron.firstName || ''} ${item.toPatron.lastName || ''}`.trim()
+                                : item.toPatron.legalName || item.toAccountNumber} ({item.toAccountNumber})
+                            </Link>
+                          ) : item.toAccountNumber || '-'}
+                        </td>
                         <td>{item.parcelNumber || '-'}</td>
                         <td>{item.waterRightAcres != null ? item.waterRightAcres.toFixed(2) : '-'}</td>
                         <td>{item.taxLot || '-'}</td>

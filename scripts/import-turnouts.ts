@@ -58,6 +58,11 @@ async function main() {
 
   console.log(`Parsed ${rows.length} rows from CSV`)
 
+  // Wipe existing data so re-runs don't duplicate
+  console.log('Deleting existing turnouts...')
+  await prisma.turnout.deleteMany({})
+  console.log('Deleted.')
+
   // Pre-fetch all valid account numbers so we can skip orphan rows fast
   const patrons = await prisma.patron.findMany({ select: { accountNumber: true } })
   const validAccounts = new Set(patrons.map((p) => p.accountNumber))
@@ -83,6 +88,7 @@ async function main() {
     if (!canal) { skippedNoCanal++; continue }
 
     const gate       = (row.Weir || '').trim()         // weir number
+    const use        = (row.Use || '').trim() || null
     const acres      = parseFloat(row.Acres) || 0
     const taxLot     = (row.Clegal || '').trim()
     const legalDesc  = (row.Legaldesc || '').trim()
@@ -93,6 +99,7 @@ async function main() {
           accountNumber,
           canal,
           gate,
+          use,
           deliveredAcres: acres,
           acresOwned: acres,
           taxLotNumber: taxLot,

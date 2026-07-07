@@ -18,11 +18,19 @@ interface TurnoutNote {
   }
 }
 
+interface WeirBook {
+  id: string
+  weirNumber: string
+  canal: string
+  weirLocation: number
+}
+
 interface Turnout {
   id: string
   accountNumber: string
   canal: string
   gate: string
+  use?: string
   deliveredAcres: number
   acresOwned: number
   taxLotNumber: string
@@ -34,6 +42,7 @@ interface Turnout {
     legalName?: string
     accountNumber?: string
   }
+  weirBook?: WeirBook | null
   notes: TurnoutNote[]
 }
 
@@ -191,7 +200,11 @@ export default function TurnoutDetailPage({ params }: { params: { id: string } }
                 </div>
                 <div>
                   <p className="sf-field-label">Gate</p>
-                  <p className="sf-field-value">{turnout.gate}</p>
+                  <p className="sf-field-value">{turnout.gate || '-'}</p>
+                </div>
+                <div>
+                  <p className="sf-field-label">Use</p>
+                  <p className="sf-field-value">{turnout.use || '-'}</p>
                 </div>
                 <div>
                   <p className="sf-field-label">Delivered Acres</p>
@@ -211,6 +224,32 @@ export default function TurnoutDetailPage({ params }: { params: { id: string } }
                 </div>
               </div>
             </div>
+
+            {/* Weir Book */}
+            {turnout.weirBook && (
+              <div className="sf-card">
+                <div className="sf-card-header">Associated Weir Book Entry</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="sf-field-label">Weir Number</p>
+                    <Link
+                      href={`/admin/weir-books/${turnout.weirBook.id}`}
+                      className="text-blue-600 hover:text-blue-900 sf-field-value"
+                    >
+                      {turnout.weirBook.weirNumber}
+                    </Link>
+                  </div>
+                  <div>
+                    <p className="sf-field-label">Canal</p>
+                    <p className="sf-field-value">{turnout.weirBook.canal}</p>
+                  </div>
+                  <div>
+                    <p className="sf-field-label">Weir Location</p>
+                    <p className="sf-field-value">{turnout.weirBook.weirLocation}</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Notes - Window Shade */}
             <WindowShade

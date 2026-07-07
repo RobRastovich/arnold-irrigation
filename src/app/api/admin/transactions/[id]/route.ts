@@ -26,6 +26,15 @@ export async function GET(
                 accountNumber: true,
               },
             },
+            toPatron: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                legalName: true,
+                accountNumber: true,
+              },
+            },
           },
         },
       },

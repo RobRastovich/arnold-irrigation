@@ -156,6 +156,7 @@ model Turnout {
   accountNumber     String
   canal             String   @db.VarChar(255)
   gate              String   @db.VarChar(255)
+  use               String?  @db.VarChar(50)
   deliveredAcres     Float
   acresOwned        Float
   taxLotNumber      String   @db.VarChar(255)
