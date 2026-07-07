@@ -51,6 +51,13 @@ export async function POST(request: NextRequest) {
     const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email
     setCurrentUserId(user.userId, userName)
 
+    if (isDefault) {
+      await prisma.savedListView.updateMany({
+        where: { userId: user.userId, entityType, isDefault: true },
+        data: { isDefault: false },
+      })
+    }
+
     const view = await prisma.savedListView.create({
       data: {
         name,

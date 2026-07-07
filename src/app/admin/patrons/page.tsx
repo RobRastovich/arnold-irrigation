@@ -14,6 +14,7 @@ export default function PatronsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [listViews, setListViews] = useState<any[]>([])
   const [selectedView, setSelectedView] = useState<any>(null)
+  const [editingView, setEditingView] = useState<any>(null)
   const [showListViewModal, setShowListViewModal] = useState(false)
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     column: null,
@@ -37,10 +38,10 @@ export default function PatronsPage() {
 
   useEffect(() => {
     fetchPatrons()
-    fetchListViews()
+    fetchListViews(true)
   }, [])
 
-  const fetchListViews = async () => {
+  const fetchListViews = async (autoSelectDefault = false) => {
     try {
       const token = localStorage.getItem('token')
       const response = await fetch('/api/admin/list-views?entityType=patron', {
@@ -52,6 +53,10 @@ export default function PatronsPage() {
       if (response.ok) {
         const data = await response.json()
         setListViews(data)
+        if (autoSelectDefault) {
+          const defaultView = data.find((v: any) => v.isDefault)
+          if (defaultView) setSelectedView(defaultView)
+        }
       }
     } catch (error) {
       console.error('Error fetching list views:', error)
@@ -155,7 +160,7 @@ export default function PatronsPage() {
     setSortConfig(nextSortConfig(sortConfig, columnId))
   }
 
-  const handleSaveListView = async (view: { id?: string; name: string; columns: string[]; filters: any[] }) => {
+  const handleSaveListView = async (view: { id?: string; name: string; columns: string[]; filters: any[]; isDefault: boolean }) => {
     try {
       const token = localStorage.getItem('token')
       const url = view.id ? `/api/admin/list-views/${view.id}` : '/api/admin/list-views'
@@ -170,11 +175,14 @@ export default function PatronsPage() {
           entityType: 'patron',
           columns: view.columns,
           filters: view.filters,
+          isDefault: view.isDefault,
         }),
       })
 
       if (response.ok) {
+        const saved = await response.json()
         await fetchListViews()
+        setSelectedView(saved)
       } else {
         const data = await response.json()
         throw new Error(data.error || 'Failed to save list view')
@@ -276,10 +284,10 @@ export default function PatronsPage() {
           <h2 className="text-xl font-semibold text-gray-900">Patrons</h2>
           <div className="flex gap-2">
             <button
-              onClick={() => setShowListViewModal(true)}
+              onClick={() => { setEditingView(null); setShowListViewModal(true) }}
               className="sf-btn sf-btn-secondary"
             >
-              {selectedView ? 'Edit List View' : 'Create List View'}
+              New List View
             </button>
             <Link
               href="/admin/patrons/new"
@@ -307,18 +315,26 @@ export default function PatronsPage() {
                   <option value="">All Patrons (Default View)</option>
                   {listViews.map((view) => (
                     <option key={view.id} value={view.id}>
-                      {view.name}
+                      {view.name}{view.isDefault ? ' ★' : ''}
                     </option>
                   ))}
                 </select>
               </div>
               {selectedView && (
-                <button
-                  onClick={() => handleDeleteView(selectedView.id)}
-                  className="text-red-600 hover:text-red-900 text-sm"
-                >
-                  Delete View
-                </button>
+                <div className="flex gap-2 items-center">
+                  <button
+                    onClick={() => { setEditingView(selectedView); setShowListViewModal(true) }}
+                    className="text-blue-600 hover:text-blue-900 text-sm"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteView(selectedView.id)}
+                    className="text-red-600 hover:text-red-900 text-sm"
+                  >
+                    Delete
+                  </button>
+                </div>
               )}
               <div className="flex-1">
                 <input
@@ -409,11 +425,11 @@ export default function PatronsPage() {
 
       <ListViewModal
         isOpen={showListViewModal}
-        onClose={() => setShowListViewModal(false)}
+        onClose={() => { setShowListViewModal(false); setEditingView(null) }}
         entityType="patron"
         availableColumns={availableColumns}
         onSave={handleSaveListView}
-        existingView={selectedView || undefined}
+        existingView={editingView || undefined}
       />
     </div>
   )

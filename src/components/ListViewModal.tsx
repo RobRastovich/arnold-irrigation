@@ -18,12 +18,13 @@ interface ListViewModalProps {
   onClose: () => void
   entityType: string
   availableColumns: Column[]
-  onSave: (view: { id?: string; name: string; columns: string[]; filters: Filter[] }) => void
+  onSave: (view: { id?: string; name: string; columns: string[]; filters: Filter[]; isDefault: boolean }) => void
   existingView?: {
     id: string
     name: string
     columns: string[]
     filters: Filter[]
+    isDefault: boolean
   }
 }
 
@@ -49,6 +50,7 @@ export default function ListViewModal({
   const [name, setName] = useState('')
   const [selectedColumns, setSelectedColumns] = useState<string[]>([])
   const [filters, setFilters] = useState<Filter[]>([])
+  const [isDefault, setIsDefault] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -58,10 +60,12 @@ export default function ListViewModal({
       setName(existingView.name)
       setSelectedColumns(existingView.columns)
       setFilters(existingView.filters)
+      setIsDefault(existingView.isDefault)
     } else {
       setName('')
       setSelectedColumns(availableColumns.map((col) => col.id))
       setFilters([])
+      setIsDefault(false)
     }
     setError('')
   }, [isOpen, existingView, availableColumns])
@@ -106,7 +110,7 @@ export default function ListViewModal({
     }
 
     try {
-      await onSave({ id: existingView?.id, name, columns: selectedColumns, filters })
+      await onSave({ id: existingView?.id, name, columns: selectedColumns, filters, isDefault })
       onClose()
     } catch (err: any) {
       setError(err.message || 'Failed to save list view')
@@ -144,6 +148,19 @@ export default function ListViewModal({
                 required
                 className="sf-input w-full"
               />
+            </div>
+
+            <div className="mb-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isDefault}
+                  onChange={(e) => setIsDefault(e.target.checked)}
+                  className="rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">Set as default view</span>
+              </label>
+              <p className="text-xs text-gray-400 mt-1 ml-5">This view will load automatically when you open the page.</p>
             </div>
 
             <div className="mb-4">

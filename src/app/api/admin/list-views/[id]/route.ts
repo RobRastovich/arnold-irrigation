@@ -48,6 +48,16 @@ export async function PUT(
     const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email
     setCurrentUserId(user.userId, userName)
 
+    if (isDefault) {
+      const existing = await prisma.savedListView.findFirst({ where: { id: params.id, userId: user.userId } })
+      if (existing) {
+        await prisma.savedListView.updateMany({
+          where: { userId: user.userId, entityType: existing.entityType, isDefault: true, id: { not: params.id } },
+          data: { isDefault: false },
+        })
+      }
+    }
+
     const view = await prisma.savedListView.update({
       where: { id: params.id },
       data: {
