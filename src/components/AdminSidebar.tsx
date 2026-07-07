@@ -12,6 +12,8 @@ const menuItems = [
   { name: 'Weir Books', icon: '📖', href: '/admin/weir-books' },
   { name: 'Rates', icon: '💲', href: '/admin/rates' },
   { name: 'Assessments', icon: '🧾', href: '/admin/invoices' },
+  { name: 'CMS Pages', icon: '📄', href: '/admin/pages' },
+  { name: 'Navigation', icon: '🔗', href: '/admin/navigation' },
   { name: 'Audit Logs', icon: '📋', href: '/admin/audit-logs' },
 ]
 

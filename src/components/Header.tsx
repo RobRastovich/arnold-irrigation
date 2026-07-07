@@ -1,14 +1,47 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+interface NavLink {
+  id: string
+  label: string
+  url: string
+  openInNew: boolean
+  sortOrder: number
+}
+
+interface NavGroup {
+  id: string
+  label: string
+  sortOrder: number
+  links: NavLink[]
+}
+
+interface NavData {
+  groups: NavGroup[]
+  topLevelLinks: NavLink[]
+}
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [navData, setNavData] = useState<NavData>({ groups: [], topLevelLinks: [] })
+
+  useEffect(() => {
+    fetch('/api/navigation')
+      .then((r) => r.json())
+      .then((data) => setNavData(data))
+      .catch(() => {})
+  }, [])
+
+  const linkProps = (link: NavLink) => ({
+    href: link.url,
+    ...(link.openInNew ? { target: '_blank', rel: 'noopener noreferrer' } : {}),
+  })
 
   return (
     <header className="bg-primary-800 text-white">
-      {/* Top bar with quick links */}
+      {/* Top bar */}
       <div className="bg-primary-900 py-2">
         <div className="container mx-auto px-4 flex justify-between items-center text-sm">
           <div className="flex gap-4">
@@ -41,79 +74,44 @@ export default function Header() {
             <Link href="/" className="hover:text-primary-300 transition font-medium">
               Home
             </Link>
-            
-            <div className="relative group">
-              <button className="hover:text-primary-300 transition font-medium flex items-center gap-1">
-                The District
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <div className="absolute top-full left-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                <div className="py-2">
-                  <Link href="/district/history" className="block px-4 py-2 hover:bg-primary-50">
-                    History
-                  </Link>
-                  <Link href="/district/board" className="block px-4 py-2 hover:bg-primary-50">
-                    Board of Directors
-                  </Link>
-                  <Link href="/district/staff" className="block px-4 py-2 hover:bg-primary-50">
-                    Staff
-                  </Link>
-                  <Link href="/district/meetings" className="block px-4 py-2 hover:bg-primary-50">
-                    Board Meetings
-                  </Link>
-                </div>
-              </div>
-            </div>
 
-            <div className="relative group">
-              <button className="hover:text-primary-300 transition font-medium flex items-center gap-1">
-                Operations
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <div className="absolute top-full left-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                <div className="py-2">
-                  <Link href="/operations/projects" className="block px-4 py-2 hover:bg-primary-50">
-                    Projects
-                  </Link>
-                  <Link href="/operations/canal" className="block px-4 py-2 hover:bg-primary-50">
-                    Canal Piping
-                  </Link>
-                </div>
-              </div>
-            </div>
+            {/* Top-level links (no group) */}
+            {navData.topLevelLinks.map((link) => (
+              <Link
+                key={link.id}
+                {...linkProps(link)}
+                className="hover:text-primary-300 transition font-medium"
+              >
+                {link.label}
+              </Link>
+            ))}
 
-            <div className="relative group">
-              <button className="hover:text-primary-300 transition font-medium flex items-center gap-1">
-                Resources
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <div className="absolute top-full left-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                <div className="py-2">
-                  <Link href="/resources/topics" className="block px-4 py-2 hover:bg-primary-50">
-                    Useful Topics
-                  </Link>
-                  <Link href="/resources/manuals" className="block px-4 py-2 hover:bg-primary-50">
-                    Manuals
-                  </Link>
-                  <Link href="/resources/forms" className="block px-4 py-2 hover:bg-primary-50">
-                    Forms
-                  </Link>
-                  <Link href="/resources/links" className="block px-4 py-2 hover:bg-primary-50">
-                    Links
-                  </Link>
-                </div>
+            {/* Dropdown groups */}
+            {navData.groups.map((group) => (
+              <div key={group.id} className="relative group">
+                <button className="hover:text-primary-300 transition font-medium flex items-center gap-1">
+                  {group.label}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {group.links.length > 0 && (
+                  <div className="absolute top-full left-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                    <div className="py-2">
+                      {group.links.map((link) => (
+                        <Link
+                          key={link.id}
+                          {...linkProps(link)}
+                          className="block px-4 py-2 hover:bg-primary-50"
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-
-            <Link href="/news" className="hover:text-primary-300 transition font-medium">
-              News & Events
-            </Link>
+            ))}
 
             <Link href="/login" className="bg-primary-600 hover:bg-primary-500 px-4 py-2 rounded-lg transition">
               Login
@@ -142,18 +140,21 @@ export default function Header() {
               <Link href="/" className="hover:text-primary-300 transition">
                 Home
               </Link>
-              <Link href="/district/history" className="hover:text-primary-300 transition">
-                The District
-              </Link>
-              <Link href="/operations/projects" className="hover:text-primary-300 transition">
-                Operations
-              </Link>
-              <Link href="/resources/topics" className="hover:text-primary-300 transition">
-                Resources
-              </Link>
-              <Link href="/news" className="hover:text-primary-300 transition">
-                News & Events
-              </Link>
+              {navData.topLevelLinks.map((link) => (
+                <Link key={link.id} {...linkProps(link)} className="hover:text-primary-300 transition">
+                  {link.label}
+                </Link>
+              ))}
+              {navData.groups.map((group) => (
+                <div key={group.id}>
+                  <p className="text-primary-300 text-xs uppercase tracking-wide font-semibold mb-1">{group.label}</p>
+                  {group.links.map((link) => (
+                    <Link key={link.id} {...linkProps(link)} className="block pl-3 py-1 hover:text-primary-300 transition">
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              ))}
               <Link href="/login" className="bg-primary-600 hover:bg-primary-500 px-4 py-2 rounded-lg transition text-center">
                 Login
               </Link>
