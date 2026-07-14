@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* About */}
           <div>
-            <h3 className="text-lg font-bold mb-4">Arnold Irrigation District</h3>
+            <img src="/AIDLogo.png" alt="Arnold Irrigation District" style={{ height: '44px', width: 'auto' }} className="mb-4" />
             <p className="text-primary-200 text-sm">
               Providing reliable water management and irrigation services to our community since 1906.
             </p>

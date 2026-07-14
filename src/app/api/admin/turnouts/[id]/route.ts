@@ -44,12 +44,11 @@ export async function GET(
 
     const userMap = new Map(users.map((u: any) => [u.id, u]))
 
-    // Look up associated WeirBook by canal + gate (weirNumber)
+    // Look up associated WeirBook by composite key "CANAL-GATE" (how weirNumber is stored)
     const weirBook = turnout.gate
-      ? await prisma.weirBook.findFirst({
+      ? await prisma.weirBook.findUnique({
           where: {
-            canal: turnout.canal,
-            weirNumber: turnout.gate,
+            weirNumber: `${turnout.canal}-${turnout.gate}`,
           },
           select: {
             id: true,

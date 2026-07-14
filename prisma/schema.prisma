@@ -26,6 +26,19 @@ enum TicketType {
   BUG_FIX
 }
 
+enum SchedulerType {
+  THERMAL_SCAN
+  DITCH_SURVEY
+  WEIR_ANALYSIS
+  PATRON
+}
+
+enum SchedulerStatus {
+  NEW_REQUEST
+  SCHEDULED
+  COMPLETED
+}
+
 model User {
   id                String   @id @default(cuid())
   email             String   @unique
@@ -176,6 +189,7 @@ model Note {
   patronId       String?
   turnoutId      String?
   ticketId       String?
+  schedulerId    String?
   createdBy      String?
   timeReceived   DateTime @default(now())
   notes          String   @db.Text
@@ -185,12 +199,54 @@ model Note {
   patron         Patron?  @relation(fields: [patronId], references: [id], onDelete: Cascade)
   turnout        Turnout? @relation(fields: [turnoutId], references: [id], onDelete: Cascade)
   ticket         Ticket?  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  scheduler      Scheduler? @relation(fields: [schedulerId], references: [id], onDelete: Cascade)
 
   @@map("notes")
   @@index([patronId])
   @@index([turnoutId])
   @@index([ticketId])
+  @@index([schedulerId])
 }
+
+model Scheduler {
+  id            String          @id @default(cuid())
+  scheduleId    Int             @unique @default(autoincrement())
+  scheduledTime DateTime
+  type          SchedulerType
+  status        SchedulerStatus @default(NEW_REQUEST)
+  description   String          @db.VarChar(255)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  notes         Note[]
+  documents     SchedulerDocument[]
+
+  @@map("scheduler")
+  @@index([scheduledTime])
+  @@index([status])
+  @@index([type])
+}
+
+model SchedulerDocument {
+  id           String       @id @default(cuid())
+  schedulerId  String
+  documentType DocumentType @default(INFO)
+  fileName     String
+  s3Key        String
+  s3Url        String
+  mimeType     String
+  fileSize     Int
+  description  String?
+  uploadedBy   String
+  uploadedById String
+  createdAt    DateTime     @default(now())
+
+  scheduler    Scheduler    @relation(fields: [schedulerId], references: [id], onDelete: Cascade)
+
+  @@map("scheduler_documents")
+  @@index([schedulerId])
+}
+
 
 model AuditLog {
   id          String   @id @default(cuid())

@@ -56,7 +56,12 @@ export default function AdminLoginPage() {
       <div className="hidden lg:flex lg:w-1/2 bg-primary-900 items-center justify-center p-12">
         <div className="max-w-md text-white">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">Arnold Irrigation District</h1>
+            <img
+              src="/WaterOps.png"
+              alt="WaterOps"
+              style={{ width: '280px', height: 'auto' }}
+              className="mb-4"
+            />
             <p className="text-primary-200 text-lg">Administration Portal</p>
           </div>
           <div className="space-y-4 text-primary-100">

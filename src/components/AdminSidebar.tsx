@@ -7,14 +7,14 @@ const menuItems = [
   { name: 'Dashboard', icon: '📊', href: '/admin/dashboard' },
   { name: 'Patrons', icon: '👥', href: '/admin/patrons' },
   { name: 'Turnouts', icon: '💧', href: '/admin/turnouts' },
-  { name: 'Users', icon: '👤', href: '/admin/users' },
-  { name: 'Tickets', icon: '🎫', href: '/admin/tickets' },
-  { name: 'Weir Books', icon: '📖', href: '/admin/weir-books' },
-  { name: 'Rates', icon: '💲', href: '/admin/rates' },
+  { name: 'Rates', icon: '�', href: '/admin/rates' },
   { name: 'Assessments', icon: '🧾', href: '/admin/invoices' },
-  { name: 'CMS Pages', icon: '📄', href: '/admin/pages' },
-  { name: 'Navigation', icon: '🔗', href: '/admin/navigation' },
-  { name: 'Audit Logs', icon: '📋', href: '/admin/audit-logs' },
+  { name: 'Weir Book', icon: '📖', href: '/admin/weir-books' },
+  { name: 'Web Pages', icon: '�', href: '/admin/pages' },
+  { name: 'Web Menus', icon: '🔗', href: '/admin/navigation' },
+  { name: 'Suport Tickets', icon: '🎫', href: '/admin/tickets' },
+  { name: 'Drone Request', icon: '�', href: '/admin/schedulers' },
+  { name: 'Audit Log', icon: '📋', href: '/admin/audit-logs' },
 ]
 
 export default function AdminSidebar() {
@@ -30,14 +30,13 @@ export default function AdminSidebar() {
   return (
     <aside className="w-64 bg-gray-900 text-white flex flex-col">
       <div className="p-4 border-b border-gray-700">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-            <span className="font-bold text-lg">AID</span>
-          </div>
-          <div>
-            <h1 className="font-bold text-lg">Arnold ID</h1>
-            <p className="text-xs text-gray-400">Admin Portal</p>
-          </div>
+        <div className="flex flex-col items-start gap-1">
+          <img
+            src="/WaterOps.png"
+            alt="WaterOps"
+            style={{ width: '150px', height: 'auto' }}
+          />
+          <p className="text-xs text-gray-400 pl-1">Admin Portal</p>
         </div>
       </div>
 

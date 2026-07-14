@@ -59,14 +59,12 @@ export default function Header() {
       <nav className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-              <span className="text-primary-800 font-bold text-xl">AID</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">Arnold Irrigation District</h1>
-              <p className="text-xs text-primary-200">Management System</p>
-            </div>
+          <Link href="/">
+            <img
+              src="/AIDLogo.png"
+              alt="Arnold Irrigation District"
+              style={{ height: '52px', width: 'auto' }}
+            />
           </Link>
 
           {/* Desktop navigation */}

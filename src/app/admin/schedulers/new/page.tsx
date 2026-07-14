@@ -1,0 +1,17 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import AdminSidebar from '@/components/AdminSidebar'
+
+const types = [['THERMAL_SCAN', 'Thermal Scan'], ['DITCH_SURVEY', 'Ditch Survey'], ['WEIR_ANALYSIS', 'Weir Analysis'], ['PATRON', 'Patron']]
+const statuses = [['NEW_REQUEST', 'New Request'], ['SCHEDULED', 'Scheduled'], ['COMPLETED', 'Completed']]
+
+export default function NewSchedulerPage() {
+  const router = useRouter()
+  const [formData, setFormData] = useState({ scheduledTime: '', type: 'THERMAL_SCAN', status: 'NEW_REQUEST', description: '' })
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const submit = async (event: React.FormEvent) => { event.preventDefault(); setSubmitting(true); setError(''); try { const response = await fetch('/api/admin/schedulers', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify({ ...formData, scheduledTime: new Date(formData.scheduledTime).toISOString() }) }); if (!response.ok) throw new Error((await response.json()).error || 'Failed to create activity'); router.push('/admin/schedulers') } catch (err: any) { setError(err.message) } finally { setSubmitting(false) } }
+  return <div className="min-h-screen bg-gray-100 flex"><AdminSidebar /><main className="flex-1 p-8"><div className="max-w-2xl mx-auto"><button onClick={() => router.push('/admin/schedulers')} className="text-primary-600 hover:text-primary-900 mb-4">← Back to Scheduler</button><h1 className="text-3xl font-bold text-gray-900 mb-6">Add Scheduled Activity</h1>{error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}<form onSubmit={submit} className="bg-white rounded-lg shadow p-6 space-y-6"><div><label className="block text-sm font-medium text-gray-700 mb-2">Scheduled Time *</label><input type="datetime-local" value={formData.scheduledTime} onChange={(event) => setFormData({ ...formData, scheduledTime: event.target.value })} required className="sf-input w-full" /></div><div className="grid grid-cols-2 gap-4"><div><label className="block text-sm font-medium text-gray-700 mb-2">Type *</label><select value={formData.type} onChange={(event) => setFormData({ ...formData, type: event.target.value })} className="sf-input w-full">{types.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></div><div><label className="block text-sm font-medium text-gray-700 mb-2">Status *</label><select value={formData.status} onChange={(event) => setFormData({ ...formData, status: event.target.value })} className="sf-input w-full">{statuses.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></div></div><div><label className="block text-sm font-medium text-gray-700 mb-2">Description *</label><textarea value={formData.description} onChange={(event) => setFormData({ ...formData, description: event.target.value })} maxLength={255} rows={4} required className="sf-input w-full" /></div><div className="flex justify-end gap-4"><button type="button" onClick={() => router.push('/admin/schedulers')} className="sf-btn sf-btn-secondary">Cancel</button><button type="submit" disabled={submitting} className="sf-btn sf-btn-primary">{submitting ? 'Creating...' : 'Create Activity'}</button></div></form></div></main></div>
+}
