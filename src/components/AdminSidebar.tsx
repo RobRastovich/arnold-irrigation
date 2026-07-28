@@ -15,6 +15,7 @@ const menuItems = [
   { name: 'Suport Tickets', icon: '🎫', href: '/admin/tickets' },
   { name: 'Drone Request', icon: '�', href: '/admin/schedulers' },
   { name: 'Audit Log', icon: '📋', href: '/admin/audit-logs' },
+  { name: 'Users', icon: '👤', href: '/admin/users' },
 ]
 
 export default function AdminSidebar() {
