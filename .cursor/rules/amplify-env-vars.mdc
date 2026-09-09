@@ -1,0 +1,32 @@
+---
+description: Expose new server-side env vars to the Amplify Gen 1 SSR Lambda
+globs: next.config.js,amplify.yml,DEPLOYMENT.md
+alwaysApply: true
+---
+
+# Amplify Gen 1 Environment Variables
+
+Amplify Console env vars are available at **build time** but are **not** injected into the SSR Lambda. Skipping the steps below causes `PrismaClientInitializationError: Environment variable not found: …`.
+
+Every new **server-side** variable needs all four:
+
+1. Amplify Console → App settings → Environment variables
+2. `next.config.js` `env` block (bakes the value into the SSR bundle)
+3. `echo "NAME=$NAME" >> .env.production` in `amplify.yml` (Prisma reads the file, not only `process.env`)
+4. Commit and push so Amplify redeploys
+
+```js
+// next.config.js
+env: {
+  DATABASE_URL: process.env.DATABASE_URL,
+  // add new server-side vars here
+}
+```
+
+```yaml
+# amplify.yml build.commands
+- echo "DATABASE_URL=$DATABASE_URL" >> .env.production
+# add new vars here too
+- npx prisma migrate deploy
+- npm run build
+```

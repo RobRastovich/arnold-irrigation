@@ -1,0 +1,37 @@
+---
+description: Admin list pages with saved views, columns, filters, and sorting
+globs: src/app/admin/*/page.tsx,src/components/ListViewModal.tsx,src/app/api/admin/list-views/**/*.ts
+alwaysApply: false
+---
+
+# List View Pattern
+
+Reuse the existing list-view stack. Do not recreate schema, APIs, or `ListViewModal`.
+
+- Model: `SavedListView` (`entityType`, `columns` JSON, `filters` JSON, `userId`, `isDefault`)
+- APIs: `GET/POST /api/admin/list-views`, `GET/PUT/DELETE /api/admin/list-views/[id]`
+- UI: `src/components/ListViewModal.tsx`
+- Sorting helpers: `sortItems`, `nextSortConfig`, `SortConfig` from `@/lib/sort-utils`
+
+Copy the integration in `src/app/admin/patrons/page.tsx`.
+
+## New list page checklist
+
+1. Define `availableColumns` as `{ id, label }[]` for that entity
+2. Fetch views with `entityType` matching the entity name (`patron`, `turnout`, …)
+3. Auto-select the user's default view on first load
+4. Header: "Create List View" (`sf-btn-secondary`) + "Add" link (`sf-btn-primary`)
+5. Toolbar: view `<select>`, delete-selected-view control, search input (`sf-input`)
+6. Apply saved-view filters, then search, then `sortItems`
+7. Render only `selectedView.columns` (or all `availableColumns` if no view)
+8. Render `ListViewModal` with `entityType`, `availableColumns`, `onSave`, optional `existingView`
+
+## Filter operators
+
+`equals`, `not_equals`, `contains`, `not_contains`, `greater_than`, `less_than`, `greater_equal`, `less_equal` — compare case-insensitively for strings.
+
+## API / audit
+
+- `authenticateRequest`; views are scoped to `user.userId`
+- Mutations: `setCurrentUserId` / `clearCurrentUserId` (including on error)
+- POST requires `name`, `entityType`, and `columns`

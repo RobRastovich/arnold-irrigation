@@ -2,25 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-
-const menuItems = [
-  { name: 'Dashboard', icon: '📊', href: '/admin/dashboard' },
-  { name: 'Patrons', icon: '👥', href: '/admin/patrons' },
-  { name: 'Turnouts', icon: '💧', href: '/admin/turnouts' },
-  { name: 'Rates', icon: '�', href: '/admin/rates' },
-  { name: 'Assessments', icon: '🧾', href: '/admin/invoices' },
-  { name: 'Weir Book', icon: '📖', href: '/admin/weir-books' },
-  { name: 'Web Pages', icon: '�', href: '/admin/pages' },
-  { name: 'Web Menus', icon: '🔗', href: '/admin/navigation' },
-  { name: 'Suport Tickets', icon: '🎫', href: '/admin/tickets' },
-  { name: 'Drone Request', icon: '�', href: '/admin/schedulers' },
-  { name: 'Audit Log', icon: '📋', href: '/admin/audit-logs' },
-  { name: 'Users', icon: '👤', href: '/admin/users' },
-]
+import { useAdminFeatures, visibleAdminMenuItems } from '@/components/AdminFeatureContext'
 
 export default function AdminSidebar() {
   const pathname = usePathname()
   const router = useRouter()
+  const { featureKeys, role } = useAdminFeatures()
+  const menuItems = visibleAdminMenuItems(featureKeys, role)
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -47,7 +35,7 @@ export default function AdminSidebar() {
             pathname === item.href || pathname.startsWith(item.href + '/')
           return (
             <Link
-              key={item.name}
+              key={item.key}
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
                 isActive

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma, setCurrentUserId, clearCurrentUserId } from '@/lib/db'
 import { authenticateRequest } from '@/lib/api-auth'
 import { hashPassword } from '@/lib/auth'
+import { replaceUserFeatures } from '@/lib/feature-access'
 
 // GET all users
 export async function GET(request: NextRequest) {
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest) {
       phone,
       role,
       timezone,
+      featureIds,
     } = body
 
     // Check if email already exists
@@ -138,6 +140,10 @@ export async function POST(request: NextRequest) {
         updatedAt: true,
       },
     })
+
+    if (Array.isArray(featureIds) && featureIds.length > 0) {
+      await replaceUserFeatures(newUser.id, featureIds)
+    }
 
     clearCurrentUserId()
 

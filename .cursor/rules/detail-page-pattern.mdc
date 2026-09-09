@@ -1,0 +1,65 @@
+---
+description: Salesforce-like detail pages, related lists, and add-item modals
+globs: src/app/admin/**/[id]/**/*.tsx,src/components/**/*Modal.tsx,src/components/WindowShade.tsx
+alwaysApply: false
+---
+
+# Detail Page and Related List Pattern
+
+Follow existing admin detail pages (e.g. patrons, turnouts). Do not invent a new layout.
+
+## Layout and header
+
+- `sf-card` sections; Basic Information uses `grid-cols-1 md:grid-cols-3`
+- Group related fields (e.g. Service & Mailing Address in one card)
+- Labels `sf-field-label`, values `sf-field-value`
+- Page title with Edit `Link` in the top right
+
+## Field validation highlighting
+
+Highlight the **field container**, not the card:
+
+```tsx
+<div className={(() => {
+  const mismatch = Math.abs(expected - actual) > 0.01
+  return mismatch ? 'sf-field-highlighted' : ''
+})()}>
+  <p className="sf-field-label">Field Name</p>
+  <p className="sf-field-value">{value}</p>
+</div>
+```
+
+## Related lists
+
+- Wrap in `WindowShade` with `defaultOpen={false}` and `title={`Items (${items.length})`}`
+- Put a "New Item" action on the shade (`sf-btn sf-btn-secondary text-xs`)
+- Table: `sf-table`
+- Names that have a detail page are `Link`s with `text-blue-600 hover:text-blue-900`
+- Truncate long text (notes) to 100 chars + `...`
+
+## Add-item modals
+
+- New modal at `src/components/[Item]Modal.tsx`
+- Props: `isOpen`, `onClose`, `parentId`, `onItemAdded`
+- Buttons: `sf-btn sf-btn-primary` / `sf-btn sf-btn-secondary`
+- Auth: `Authorization: Bearer ${localStorage.getItem('token')}`
+- On success: `onItemAdded()`, `onClose()`, reset form
+- Parent page: modal state + refetch handler; render the modal at the bottom
+
+## Creating related records from a detail page
+
+Prefer a query param so the new-record form pre-fills the parent:
+
+```tsx
+<Link href={`/admin/items/new?parentId=${patron.id}`} className="sf-btn sf-btn-secondary text-xs">
+  New Item
+</Link>
+```
+
+On the new page, `useSearchParams()` + `useEffect` to set `parentId`.
+
+## Foreign keys and APIs
+
+- On related detail pages, the parent name links back when the API returns parent `id`
+- Prisma `include` / `select` the parent id and display fields
+- Mutations: `setCurrentUserId(user.userId, userName)` then `clearCurrentUserId()` (including on error)

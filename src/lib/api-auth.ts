@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server'
 import { verifyToken, JWTPayload } from './auth'
+import { featureKeyForPath } from './features'
+import { userHasFeature } from './feature-access'
 
 export type UserRole = 'ADMIN' | 'STAFF' | 'PATRON'
 
@@ -14,7 +16,16 @@ export async function authenticateRequest(request: NextRequest): Promise<Authent
 
     const token = authHeader.substring(7)
     const payload = verifyToken(token)
-    return payload
+    if (!payload) return null
+
+    const featureKey = featureKeyForPath(request.nextUrl.pathname)
+    if (!featureKey) return payload
+    if (featureKey === 'features') {
+      return payload.role === 'ADMIN' ? payload : null
+    }
+
+    const allowed = await userHasFeature(payload.userId, featureKey)
+    return allowed ? payload : null
   } catch (error) {
     return null
   }

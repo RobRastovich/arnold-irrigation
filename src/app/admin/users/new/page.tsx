@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
@@ -20,8 +20,39 @@ export default function NewUserPage() {
     role: 'PATRON',
     timezone: 'America/Los_Angeles',
   })
+  const [features, setFeatures] = useState<any[]>([])
+  const [selectedFeatureIds, setSelectedFeatureIds] = useState<string[]>([])
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    const loadFeatures = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        const response = await fetch('/api/admin/features', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (response.ok) {
+          setFeatures(await response.json())
+        }
+      } catch (err) {
+        console.error('Error fetching features:', err)
+      }
+    }
+    loadFeatures()
+  }, [])
+
+  useEffect(() => {
+    if (formData.role === 'PATRON') {
+      setSelectedFeatureIds([])
+      return
+    }
+    setSelectedFeatureIds(
+      features
+        .filter((feature) => feature.key !== 'users' || formData.role === 'ADMIN')
+        .map((feature) => feature.id)
+    )
+  }, [formData.role, features])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -41,7 +72,10 @@ export default function NewUserPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          featureIds: formData.role === 'PATRON' ? [] : selectedFeatureIds,
+        }),
       })
 
       if (!response.ok) {
@@ -235,6 +269,36 @@ export default function NewUserPage() {
                     </div>
                   </div>
                 </div>
+
+                {formData.role !== 'PATRON' && features.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Features</h3>
+                    <p className="text-sm text-gray-500 mb-3">
+                      Choose which admin tabs this user can access.
+                    </p>
+                    <div className="border border-gray-300 rounded p-3 max-h-56 overflow-y-auto">
+                      {features
+                        .filter((feature) => feature.key !== 'users' || formData.role === 'ADMIN')
+                        .map((feature) => (
+                          <label key={feature.id} className="flex items-center mb-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedFeatureIds.includes(feature.id)}
+                              onChange={() => {
+                                setSelectedFeatureIds((prev) =>
+                                  prev.includes(feature.id)
+                                    ? prev.filter((id) => id !== feature.id)
+                                    : [...prev, feature.id]
+                                )
+                              }}
+                              className="mr-2"
+                            />
+                            <span className="text-sm">{feature.icon} {feature.name}</span>
+                          </label>
+                        ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Settings */}
                 <div>

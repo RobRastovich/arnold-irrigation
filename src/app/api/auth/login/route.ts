@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyPassword, generateToken } from '@/lib/auth'
+import { getUserFeatureKeys } from '@/lib/feature-access'
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,11 +56,11 @@ export async function POST(request: NextRequest) {
       timezone: user.timezone,
     })
 
-    // Return user data (excluding password) and token
+    const featureKeys = await getUserFeatureKeys(user.id)
     const { passwordHash: _, ...userWithoutPassword } = user
 
     return NextResponse.json({
-      user: userWithoutPassword,
+      user: { ...userWithoutPassword, featureKeys },
       token,
     })
   } catch (error) {

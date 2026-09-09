@@ -37,6 +37,11 @@ export async function GET(
         timezone: true,
         createdAt: true,
         updatedAt: true,
+        features: {
+          include: {
+            feature: true,
+          },
+        },
       },
     })
 
@@ -44,7 +49,11 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    return NextResponse.json(targetUser)
+    return NextResponse.json({
+      ...targetUser,
+      features: targetUser.features.map((assignment) => assignment.feature),
+      featureKeys: targetUser.features.map((assignment) => assignment.feature.key),
+    })
   } catch (error) {
     console.error('Error fetching user:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -4,12 +4,16 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
+import WindowShade from '@/components/WindowShade'
 import { formatDateTimeInTimezone } from '@/lib/date-utils'
+import { useAdminFeatures } from '@/components/AdminFeatureContext'
 
 export default function UserDetailPage() {
   const router = useRouter()
   const params = useParams()
+  const { refreshFeatures } = useAdminFeatures()
   const [user, setUser] = useState<any>(null)
+  const [features, setFeatures] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [userTimezone, setUserTimezone] = useState('America/Los_Angeles')
@@ -24,7 +28,48 @@ export default function UserDetailPage() {
 
   useEffect(() => {
     fetchUser()
+    fetchUserFeatures()
   }, [params.id])
+
+  const fetchUserFeatures = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/admin/users/${params.id}/features`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (response.ok) {
+        setFeatures(await response.json())
+      }
+    } catch (err) {
+      console.error('Error fetching user features:', err)
+    }
+  }
+
+  const handleToggleFeature = async (feature: any, enabled: boolean) => {
+    try {
+      const token = localStorage.getItem('token')
+      const url = `/api/admin/features/${feature.id}/users${enabled ? '' : `/${params.id}`}`
+      const response = await fetch(url, {
+        method: enabled ? 'POST' : 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: enabled ? JSON.stringify({ userId: params.id }) : undefined,
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to update feature')
+      }
+      await fetchUserFeatures()
+      const stored = localStorage.getItem('user')
+      if (stored && JSON.parse(stored).id === params.id) {
+        await refreshFeatures()
+      }
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
 
   const fetchUser = async () => {
     try {
@@ -182,6 +227,48 @@ export default function UserDetailPage() {
                 </div>
               </div>
             </div>
+
+            <WindowShade
+              title={`Features (${features.filter((f) => f.enabled).length})`}
+              defaultOpen={false}
+            >
+              <table className="sf-table">
+                <thead>
+                  <tr>
+                    <th>Feature</th>
+                    <th>Tab</th>
+                    <th>Enabled</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {features
+                    .filter((feature) => feature.key !== 'users' || user.role === 'ADMIN')
+                    .map((feature) => (
+                    <tr key={feature.id}>
+                      <td>
+                        <Link
+                          href={`/admin/features/${feature.id}`}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          {feature.icon} {feature.name}
+                        </Link>
+                      </td>
+                      <td>{feature.key}</td>
+                      <td>
+                        <label className="inline-flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={feature.enabled}
+                            onChange={(e) => handleToggleFeature(feature, e.target.checked)}
+                          />
+                          <span>{feature.enabled ? 'On' : 'Off'}</span>
+                        </label>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </WindowShade>
           </div>
         </main>
       </div>

@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { FEATURE_CATALOG } from '../src/lib/features'
 
 const prisma = new PrismaClient()
 
@@ -10,7 +11,11 @@ async function main() {
   const adminPassword = await bcrypt.hash('Arnold-06172026', 10)
   const admin = await prisma.user.upsert({
     where: { email: 'admin@arnoldid.com' },
-    update: {},
+    update: {
+      passwordHash: adminPassword,
+      isActive: true,
+      role: 'ADMIN',
+    },
     create: {
       email: 'admin@arnoldid.com',
       passwordHash: adminPassword,
@@ -34,7 +39,10 @@ async function main() {
   const staffPassword = await bcrypt.hash('Staff123!', 10)
   const staff = await prisma.user.upsert({
     where: { email: 'staff@arnoldid.com' },
-    update: {},
+    update: {
+      passwordHash: staffPassword,
+      isActive: true,
+    },
     create: {
       email: 'staff@arnoldid.com',
       passwordHash: staffPassword,
@@ -53,6 +61,46 @@ async function main() {
   })
 
   console.log('Created staff user:', staff.email)
+
+  const existingFeatureCount = await prisma.feature.count()
+  for (const feature of FEATURE_CATALOG) {
+    await prisma.feature.upsert({
+      where: { key: feature.key },
+      update: {
+        name: feature.name,
+        href: feature.href,
+        icon: feature.icon,
+        sortOrder: feature.sortOrder,
+      },
+      create: {
+        key: feature.key,
+        name: feature.name,
+        href: feature.href,
+        icon: feature.icon,
+        sortOrder: feature.sortOrder,
+      },
+    })
+  }
+  console.log('Upserted features')
+
+  if (existingFeatureCount === 0) {
+    const features = await prisma.feature.findMany()
+    const staffUsers = await prisma.user.findMany({
+      where: { role: { in: ['ADMIN', 'STAFF'] } },
+      select: { id: true, role: true },
+    })
+    for (const user of staffUsers) {
+      for (const feature of features) {
+        if (feature.key === 'users' && user.role !== 'ADMIN') continue
+        await prisma.userFeature.upsert({
+          where: { userId_featureId: { userId: user.id, featureId: feature.id } },
+          update: {},
+          create: { userId: user.id, featureId: feature.id },
+        })
+      }
+    }
+    console.log('Granted all features to existing admin and staff users')
+  }
 
   console.log('Seed completed!')
 }

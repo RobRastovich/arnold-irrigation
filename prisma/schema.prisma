@@ -59,7 +59,39 @@ model User {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  features          UserFeature[]
+
   @@map("users")
+}
+
+model Feature {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  href      String
+  icon      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     UserFeature[]
+
+  @@map("features")
+}
+
+model UserFeature {
+  id        String   @id @default(cuid())
+  userId    String
+  featureId String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feature   Feature  @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, featureId])
+  @@index([userId])
+  @@index([featureId])
+  @@map("user_features")
 }
 
 model Patron {
