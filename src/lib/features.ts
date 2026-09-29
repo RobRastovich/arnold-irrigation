@@ -15,6 +15,7 @@ export const FEATURE_CATALOG: FeatureDefinition[] = [
   { key: 'rates', name: 'Rates', href: '/admin/rates', icon: '💲', sortOrder: 40, pagePrefixes: ['/admin/rates', '/admin/rate-types'], apiPrefixes: ['/api/admin/rates', '/api/admin/rate-types'] },
   { key: 'invoices', name: 'Assessments', href: '/admin/invoices', icon: '🧾', sortOrder: 50, pagePrefixes: ['/admin/invoices'], apiPrefixes: ['/api/admin/invoices'] },
   { key: 'weir-books', name: 'Weir Book', href: '/admin/weir-books', icon: '📖', sortOrder: 60, pagePrefixes: ['/admin/weir-books'], apiPrefixes: ['/api/admin/weir-books'] },
+  { key: 'storage-reports', name: 'Storage Report', href: '/admin/storage-reports', icon: '🏞️', sortOrder: 65, pagePrefixes: ['/admin/storage-reports'], apiPrefixes: ['/api/admin/storage-reports'] },
   { key: 'pages', name: 'Web Pages', href: '/admin/pages', icon: '📄', sortOrder: 70, pagePrefixes: ['/admin/pages'], apiPrefixes: ['/api/admin/pages'] },
   { key: 'navigation', name: 'Web Menus', href: '/admin/navigation', icon: '🔗', sortOrder: 80, pagePrefixes: ['/admin/navigation'], apiPrefixes: ['/api/admin/navigation'] },
   { key: 'tickets', name: 'Support Tickets', href: '/admin/tickets', icon: '🎫', sortOrder: 90, pagePrefixes: ['/admin/tickets'], apiPrefixes: ['/api/admin/tickets'] },

@@ -100,6 +100,19 @@ async function main() {
       }
     }
     console.log('Granted all features to existing admin and staff users')
+  } else {
+    const storageFeature = await prisma.feature.findUnique({ where: { key: 'storage-reports' } })
+    if (storageFeature) {
+      const admins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { id: true } })
+      for (const user of admins) {
+        await prisma.userFeature.upsert({
+          where: { userId_featureId: { userId: user.id, featureId: storageFeature.id } },
+          update: {},
+          create: { userId: user.id, featureId: storageFeature.id },
+        })
+      }
+      console.log('Granted storage-reports to ADMIN users')
+    }
   }
 
   console.log('Seed completed!')

@@ -569,3 +569,218 @@ model SavedListView {
   @@index([userId])
   @@index([entityType])
 }
+
+enum StorageReportStatus {
+  DRAFT
+  RECONCILED
+  FINAL
+}
+
+enum GageRole {
+  STREAM
+  CANAL
+  RESERVOIR
+  SPILL
+  EVAP
+}
+
+enum GageValueUnit {
+  CFS
+  STAGE_FT
+  CONTENTS_AF
+  EVAP_IN
+}
+
+enum GageValueSource {
+  OWRD
+  USBR
+  MANUAL
+  HYDROMET
+}
+
+model StorageReport {
+  id                        String               @id @default(cuid())
+  startDate                 DateTime             @db.Date
+  endDate                   DateTime             @db.Date
+  dateCode                  Int                  @default(3)
+  status                    StorageReportStatus  @default(DRAFT)
+  notes                     String?              @db.Text
+  dataQuality               String               @default("PROVISIONAL")
+  useLegacyCpInflow         Boolean              @default(true)
+  crescentOctMinContentsAf  Float?
+  waterYear                 Int
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @updatedAt
+
+  openingBalances           StorageReportOpeningBalance[]
+  instreamLeases            InstreamLease[]
+  overrides                 StorageReportOverride[]
+  result                    StorageReportResult?
+
+  @@map("storage_reports")
+  @@index([startDate, endDate])
+  @@index([status])
+  @@index([waterYear])
+}
+
+model StorageReportOpeningBalance {
+  id          String   @id @default(cuid())
+  reportId    String
+  district    String
+  reservoir   String
+  acreFeet    Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  report      StorageReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, district, reservoir])
+  @@index([reportId])
+  @@map("storage_report_opening_balances")
+}
+
+model GageStation {
+  id          String   @id @default(cuid())
+  stationNbr  String   @unique
+  name        String
+  role        GageRole
+  seriesKey   String
+  source      GageValueSource @default(OWRD)
+  defaultCfs  Float?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  values      GageDailyValue[]
+
+  @@index([seriesKey])
+  @@map("gage_stations")
+}
+
+model GageDailyValue {
+  id               String          @id @default(cuid())
+  stationId        String
+  date             DateTime        @db.Date
+  value            Float
+  unit             GageValueUnit
+  publishedStatus  String?
+  estimated        Boolean         @default(false)
+  revised          Boolean         @default(false)
+  source           GageValueSource @default(OWRD)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  station          GageStation     @relation(fields: [stationId], references: [id], onDelete: Cascade)
+
+  @@unique([stationId, date, unit])
+  @@index([date])
+  @@index([stationId, date])
+  @@map("gage_daily_values")
+}
+
+model ReservoirCapacityPoint {
+  id            String   @id @default(cuid())
+  reservoir     String
+  elevation     Float
+  acreFeet      Float
+  surfaceAcres  Float?
+  createdAt     DateTime @default(now())
+
+  @@unique([reservoir, elevation])
+  @@index([reservoir])
+  @@map("reservoir_capacity_points")
+}
+
+model DistrictWaterRight {
+  id          String   @id @default(cuid())
+  rightName   String
+  seasonIndex Int
+  maxCfs      Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([rightName, seasonIndex])
+  @@map("district_water_rights")
+}
+
+model InstreamRight {
+  id          String   @id @default(cuid())
+  name        String
+  district    String
+  kind        String
+  seasonIndex Int?
+  cfs         Float    @default(0)
+  acres       Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([district, kind])
+  @@map("instream_rights")
+}
+
+model InstreamLease {
+  id          String   @id @default(cuid())
+  reportId    String?
+  district    String
+  kind        String
+  cfs         Float    @default(0)
+  acres       Float?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  report      StorageReport? @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@map("instream_leases")
+}
+
+model PumpSeasonMonth {
+  id              String   @id @default(cuid())
+  waterYear       Int
+  month           Int
+  pumpedAf        Float    @default(0)
+  deliveriesAf    Float    @default(0)
+  beginningMeter  Float?
+  endingMeter     Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([waterYear, month])
+  @@index([waterYear])
+  @@map("pump_season_months")
+}
+
+model StorageReportOverride {
+  id          String   @id @default(cuid())
+  reportId    String
+  key         String
+  value       Float
+  reason      String?  @db.Text
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  report      StorageReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, key])
+  @@index([reportId])
+  @@map("storage_report_overrides")
+}
+
+model StorageReportResult {
+  id            String   @id @default(cuid())
+  reportId      String   @unique
+  page1         Json
+  page2         Json
+  page3         Json
+  reconciled    Boolean  @default(false)
+  maxAbsDiffAf  Float    @default(0)
+  dataQuality   String   @default("PROVISIONAL")
+  runAt         DateTime @default(now())
+
+  report        StorageReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@map("storage_report_results")
+}
