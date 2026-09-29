@@ -119,3 +119,23 @@ export const DEFAULT_CANAL_LOSS: Record<string, number> = {
 
 export const AGREEMENT_DISCLAIMER =
   'Accounting follows the 2020 inter-district agreement for AID / Lone Pine / COID use of Wickiup. Water-right title is unchanged. AID, Lone Pine, and COID “accounts” in Wickiup are bookkeeping, not a storage right.'
+
+function lookupLabel<K extends string>(map: Record<K, string>, key: unknown, fallback?: string): string {
+  if (typeof key === 'string' && Object.prototype.hasOwnProperty.call(map, key)) {
+    return map[key as K]
+  }
+  if (fallback) return fallback
+  return typeof key === 'string' ? key : ''
+}
+
+export function districtLabel(code: unknown, fallback = ''): string {
+  return lookupLabel(DISTRICT_LABELS, code, fallback)
+}
+
+export function reservoirLabel(code: unknown, fallback = ''): string {
+  return lookupLabel(RESERVOIR_LABELS, code, fallback)
+}
+
+export function priorityLabel(code: unknown, fallback = ''): string {
+  return lookupLabel(PRIORITY_LABELS, code, fallback)
+}

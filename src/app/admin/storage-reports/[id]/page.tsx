@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
-import { ACCOUNT_DISTRICTS, AGREEMENT_DISCLAIMER, DISTRICT_LABELS, PRIORITY_LABELS, RESERVOIR_LABELS } from '@/lib/storage-report/constants'
+import { ACCOUNT_DISTRICTS, AGREEMENT_DISCLAIMER, DISTRICT_LABELS, RESERVOIR_LABELS, districtLabel, priorityLabel, reservoirLabel } from '@/lib/storage-report/constants'
 
 const TABS = [
   { id: 'setup', label: 'Setup' },
@@ -483,7 +483,7 @@ export default function StorageReportDetailPage() {
                       <tbody>
                         {(page2?.rows ?? []).map((row: any) => (
                           <tr key={row.user}>
-                            <td>{PRIORITY_LABELS[row.user as keyof typeof PRIORITY_LABELS] || row.user}</td>
+                            <td>{priorityLabel(row.user, row.user)}</td>
                             <td>{fmt(row.maxRightAf)}</td>
                             <td>{fmt(row.divertedAf)}</td>
                             <td>{fmt(row.natUsedAf)}</td>
@@ -501,13 +501,13 @@ export default function StorageReportDetailPage() {
                       if (!block) return null
                       return (
                         <div key={key} className="mb-4">
-                          <p className="font-semibold mb-2">{RESERVOIR_LABELS[block.reservoir] || key}</p>
+                          <p className="font-semibold mb-2">{reservoirLabel(block.reservoir, key)}</p>
                           <table className="sf-table">
                             <thead><tr><th>District</th><th>Prior</th><th>Used</th><th>Loss</th><th>Ending</th></tr></thead>
                             <tbody>
                               {block.rows.map((row: any) => (
                                 <tr key={row.district}>
-                                  <td>{DISTRICT_LABELS[row.district as keyof typeof DISTRICT_LABELS] || row.district}</td>
+                                  <td>{districtLabel(row.district, row.district)}</td>
                                   <td>{fmt(row.priorAf)}</td>
                                   <td>{fmt(row.storageUsedAf)}</td>
                                   <td>{fmt(row.lossAf)}</td>

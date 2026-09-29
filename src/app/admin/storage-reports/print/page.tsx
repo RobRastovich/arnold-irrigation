@@ -2,7 +2,7 @@
 
 import React, { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { DISTRICT_LABELS, PRIORITY_LABELS, RESERVOIR_LABELS, AGREEMENT_DISCLAIMER } from '@/lib/storage-report/constants'
+import { AGREEMENT_DISCLAIMER, districtLabel, priorityLabel, reservoirLabel } from '@/lib/storage-report/constants'
 
 function fmt(n?: number | null) {
   if (n == null || Number.isNaN(Number(n))) return ''
@@ -166,7 +166,7 @@ function StorageReportsPrintContent() {
                 <tbody>
                   {page.page2.rows.map((row: any) => (
                     <tr key={row.user}>
-                      <td>{PRIORITY_LABELS[row.user as keyof typeof PRIORITY_LABELS] || row.user}</td>
+                      <td>{priorityLabel(row.user, row.user)}</td>
                       <td>{fmt(row.maxRightAf)}</td>
                       <td>{fmt(row.divertedAf)}</td>
                       <td>{fmt(row.natUsedAf)}</td>
@@ -184,13 +184,13 @@ function StorageReportsPrintContent() {
               const block = page.page3[key]
               return (
                 <div key={key}>
-                  <p style={{ fontWeight: 700, marginBottom: 6 }}>{RESERVOIR_LABELS[block.reservoir]}</p>
+                  <p style={{ fontWeight: 700, marginBottom: 6 }}>{reservoirLabel(block.reservoir)}</p>
                   <table>
                     <thead><tr><th>District</th><th>Prior</th><th>Used</th><th>Loss</th><th>Ending</th></tr></thead>
                     <tbody>
                       {block.rows.map((row: any) => (
                         <tr key={row.district}>
-                          <td>{DISTRICT_LABELS[row.district as keyof typeof DISTRICT_LABELS] || row.district}</td>
+                          <td>{districtLabel(row.district, row.district)}</td>
                           <td>{fmt(row.priorAf)}</td>
                           <td>{fmt(row.storageUsedAf)}</td>
                           <td>{fmt(row.lossAf)}</td>
